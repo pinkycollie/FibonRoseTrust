@@ -284,10 +284,10 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title FibonRoseID
+ * @title FibonroseTrust
  * @dev ERC721 Identity NFT with verification functionality
  */
-contract FibonRoseID is ERC721URIStorage, Ownable {
+contract FibonroseTrust is ERC721URIStorage, Ownable {
     // Verification status enum
     enum VerificationStatus {
         PENDING,
@@ -315,7 +315,7 @@ contract FibonRoseID is ERC721URIStorage, Ownable {
     event IdentityVerified(uint256 indexed tokenId, uint8 status, address indexed verifier, uint256 timestamp);
     event VerifierAuthorized(address indexed verifier, bool authorized);
     
-    constructor() ERC721("FibonRoseID", "FIBID") {
+    constructor() ERC721("FibonroseTrust", "FIBT") {
         // Initialize the contract owner as the first verifier
         _verifiers[owner()] = true;
         emit VerifierAuthorized(owner(), true);

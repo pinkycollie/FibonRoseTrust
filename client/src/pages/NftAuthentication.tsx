@@ -834,7 +834,7 @@ export default function NftAuthentication() {
         <div className="mt-10 mb-4">
           <div className="flex flex-col items-center text-center mb-8">
             <h2 className="text-2xl font-bold tracking-tight mb-2">Ecosystem Partners</h2>
-            <p className="text-muted-foreground max-w-2xl">FibonRoseID integrates with these trusted identity providers in the blockchain ecosystem</p>
+            <p className="text-muted-foreground max-w-2xl">FibonroseTrust integrates with these trusted identity providers in the blockchain ecosystem</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

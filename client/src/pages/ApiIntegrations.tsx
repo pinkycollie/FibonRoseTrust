@@ -13,7 +13,7 @@ export default function ApiIntegrations() {
           <span className="material-icons mr-2">api</span>
           <AlertTitle>NegraSecurity Framework Integration</AlertTitle>
           <AlertDescription>
-            FibonRoseID provides secure identity verification APIs for the NegraSecurity framework.
+            FibonroseTrust provides secure identity verification APIs for the NegraSecurity framework.
           </AlertDescription>
         </Alert>
 
@@ -194,7 +194,7 @@ export default function ApiIntegrations() {
                 <CardHeader>
                   <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Code Examples</h2>
                   <CardDescription>
-                    Sample code for integrating with the FibonRoseID API.
+                    Sample code for integrating with the FibonroseTrust API.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="border-t border-gray-200 dark:border-gray-700">
@@ -204,7 +204,7 @@ export default function ApiIntegrations() {
                       {
 `// Get a user's trust score
 async function getUserTrustScore(userId) {
-  const response = await fetch(\`https://api.fibonroseid.com/api/user/\${userId}/trust-score\`, {
+  const response = await fetch(\`https://api.fibonrosetrust.com/api/user/\${userId}/trust-score\`, {
     headers: {
       'Authorization': \`Bearer \${token}\`,
       'Content-Type': 'application/json'
@@ -226,7 +226,7 @@ async function getUserTrustScore(userId) {
 `import requests
 
 def get_user_trust_score(user_id, token):
-    url = f"https://api.fibonroseid.com/api/user/{user_id}/trust-score"
+    url = f"https://api.fibonrosetrust.com/api/user/{user_id}/trust-score"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
@@ -250,7 +250,7 @@ import java.net.http.HttpResponse;
 public TrustScore getUserTrustScore(int userId, String token) throws Exception {
     HttpClient client = HttpClient.newHttpClient();
     HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create("https://api.fibonroseid.com/api/user/" + userId + "/trust-score"))
+        .uri(URI.create("https://api.fibonrosetrust.com/api/user/" + userId + "/trust-score"))
         .header("Authorization", "Bearer " + token)
         .header("Content-Type", "application/json")
         .GET()
