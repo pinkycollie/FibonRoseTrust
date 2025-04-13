@@ -16,6 +16,8 @@ import path from 'path';
 import fs from 'fs';
 import { WebhookService } from './services/webhook';
 import { UniversalWebhookManager } from './services/universal-webhook';
+import PinkSyncService from './services/pinksync';
+import XanoService from './services/xano';
 import crypto from 'crypto';
 
 // Configure multer for file uploads
@@ -456,6 +458,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'Webhook test sent successfully' });
     } catch (error) {
       res.status(500).json({ message: 'Failed to test webhook', error });
+    }
+  });
+  
+  // Xano integration routes
+  app.get('/api/user/:userId/xano-integrations', async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.userId);
+    const integrations = await storage.getXanoIntegrations(userId);
+    res.json(integrations);
+  });
+  
+  app.post('/api/xano-integration', async (req: Request, res: Response) => {
+    try {
+      const data = insertXanoIntegrationSchema.parse(req.body);
+      const integration = await storage.createXanoIntegration(data);
+      
+      // Initialize the Xano service with this integration
+      const { apiKey, baseUrl, webhookSecret, aiEnabled } = integration;
+      
+      // Import XanoService dynamically to avoid circular dependencies
+      const { XanoService } = await import('./services/xano');
+      XanoService.initialize({
+        apiKey,
+        baseUrl,
+        webhookSecret: webhookSecret || undefined,
+        aiEnabled
+      });
+      
+      res.status(201).json(integration);
+    } catch (error) {
+      res.status(400).json({ message: 'Invalid Xano integration data', error });
+    }
+  });
+  
+  app.patch('/api/xano-integration/:id', async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    const integration = await storage.getXanoIntegration(id);
+    
+    if (!integration) {
+      return res.status(404).json({ message: 'Xano integration not found' });
+    }
+    
+    try {
+      const updated = await storage.updateXanoIntegration(id, req.body);
+      
+      // Re-initialize the Xano service with the updated integration
+      const { apiKey, baseUrl, webhookSecret, aiEnabled } = updated;
+      
+      // Import XanoService dynamically to avoid circular dependencies
+      const { XanoService } = await import('./services/xano');
+      XanoService.initialize({
+        apiKey,
+        baseUrl,
+        webhookSecret: webhookSecret || undefined,
+        aiEnabled
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      res.status(400).json({ message: 'Failed to update Xano integration', error });
+    }
+  });
+  
+  app.delete('/api/xano-integration/:id', async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    const success = await storage.deleteXanoIntegration(id);
+    
+    if (!success) {
+      return res.status(404).json({ message: 'Xano integration not found' });
+    }
+    
+    res.json({ success: true });
+  });
+  
+  // Xano AI analysis endpoint
+  app.post('/api/xano/analyze', async (req: Request, res: Response) => {
+    const { text, options } = req.body;
+    
+    if (!text) {
+      return res.status(400).json({ message: 'Text is required for analysis' });
+    }
+    
+    try {
+      // Import XanoService dynamically
+      const { XanoService } = await import('./services/xano');
+      
+      // Check if Xano is configured
+      const info = XanoService.getInstanceInfo();
+      if (!info.isConfigured) {
+        return res.status(400).json({ 
+          message: 'Xano is not configured. Please set up a Xano integration first.',
+          configured: false
+        });
+      }
+      
+      // Run the analysis
+      const result = await XanoService.analyzeWithAI(text, options);
+      
+      // Trigger webhook for analysis completion
+      try {
+        await WebhookService.deliverToSubscriptions(
+          EventTypes.XANO_ANALYSIS_COMPLETED, 
+          {
+            text,
+            result,
+            timestamp: new Date().toISOString()
+          }
+        );
+      } catch (webhookError) {
+        console.error('Failed to deliver analysis webhook:', webhookError);
+      }
+      
+      res.json({ success: true, result });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to analyze with Xano AI', error });
     }
   });
 

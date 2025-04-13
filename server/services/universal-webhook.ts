@@ -1,665 +1,530 @@
+import axios from 'axios';
 import { storage } from '../storage';
 import { log } from '../vite';
-import { EventType, WebhookSubscription } from '@shared/schema';
-import { syncToNotion } from './notion';
-import crypto from 'crypto';
-import axios from 'axios';
+import { cron } from 'cron';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
+import { Readable } from 'stream';
 import * as csv from 'fast-csv';
-import fs from 'fs';
-import path from 'path';
-import { CronJob } from 'cron';
+import { parse as csvParse } from 'csv-parser';
+import { format } from 'date-fns';
+import { EventType, EventTypes, InsertWebhookDelivery, InsertWebhookSubscription, WebhookDelivery } from '@shared/schema';
+import { XanoIntegration } from './integrations/xano';
+
+// Type for the normalized webhook payload
+export interface NormalizedWebhook {
+  source: string;
+  eventType: EventType;
+  payload: unknown;
+  timestamp: string;
+  metadata?: Record<string, any>;
+}
 
 /**
- * Universal Webhook Management System
- * 
- * This service handles all aspects of webhook management:
- * - Receiving webhooks from external sources
- * - Normalizing and validating webhook data
- * - Storing webhook events in the database
- * - Processing webhook data with triggers and background tasks
- * - Exporting webhook data to CSV
- * - Synchronizing data with external services (Notion, PinkSync, etc.)
+ * Universal Webhook Manager
+ * Handles webhooks from multiple sources and processes them in a unified way
  */
 export class UniversalWebhookManager {
-  // Directory for storing exported CSV files
-  private static exportDir = path.join(process.cwd(), 'exports');
-  
-  // Collection of active background tasks (cron jobs)
-  private static activeTasks: Record<string, CronJob> = {};
-  
-  // External service configurations
-  private static externalServices: Record<string, any> = {};
-  
-  // Custom source handlers for validating and normalizing webhooks
-  private static customSourceHandlers: Record<string, {
-    validateSignature: (payload: any, headers: Record<string, string>) => boolean;
-    normalize: (data: any) => Record<string, any>;
-  }> = {};
-  
+  private static instance: UniversalWebhookManager;
+  private retryJob: cron.ScheduledTask;
+  private exportJob: cron.ScheduledTask;
+  private exportPath = path.join(process.cwd(), 'exports');
+
+  private constructor() {
+    // Ensure exports directory exists
+    if (!fs.existsSync(this.exportPath)) {
+      fs.mkdirSync(this.exportPath, { recursive: true });
+    }
+
+    // Schedule retry job to run every 15 minutes
+    this.retryJob = cron.job('*/15 * * * *', () => {
+      this.retryFailedWebhooks();
+    });
+    this.retryJob.start();
+    log(`Background task retry-failed-webhooks created with schedule: */15 * * * *`, 'webhook');
+
+    // Schedule export job to run every day at midnight
+    this.exportJob = cron.job('0 0 * * *', () => {
+      this.exportWebhookData();
+    });
+    this.exportJob.start();
+    log(`Background task export-webhook-data created with schedule: 0 0 * * *`, 'webhook');
+  }
+
   /**
-   * Initialize the webhook manager
+   * Get the singleton instance of the webhook manager
+   * @returns The webhook manager instance
    */
-  public static async initialize(): Promise<void> {
-    try {
-      // Ensure export directory exists
-      if (!fs.existsSync(this.exportDir)) {
-        fs.mkdirSync(this.exportDir, { recursive: true });
-      }
-      
-      // Start any configured background tasks
-      await this.startScheduledTasks();
-      
+  public static getInstance(): UniversalWebhookManager {
+    if (!UniversalWebhookManager.instance) {
+      UniversalWebhookManager.instance = new UniversalWebhookManager();
       log('Universal Webhook Manager initialized', 'webhook');
-    } catch (error) {
-      log(`Error initializing webhook manager: ${error}`, 'webhook');
     }
+    return UniversalWebhookManager.instance;
   }
-  
+
   /**
-   * Start configured background tasks
+   * Process an incoming webhook from any source
+   * @param source The source of the webhook (e.g., 'xano', 'notion')
+   * @param body The webhook body
+   * @param headers The webhook headers
+   * @returns The processed webhook delivery
    */
-  private static async startScheduledTasks(): Promise<void> {
-    // Example scheduled task: retry failed webhook deliveries every 15 minutes
-    this.createBackgroundTask(
-      'retry-failed-webhooks',
-      '*/15 * * * *', // every 15 minutes
-      async () => {
-        try {
-          log('Running scheduled task: retry-failed-webhooks', 'webhook');
-          
-          // Find all webhooks with status 'failed' and less than 5 attempts
-          const deliveries = await storage.getWebhookDeliveries();
-          const failedDeliveries = deliveries.filter(
-            d => d.status === 'failed' && (d.attempts || 0) < 5
-          );
-          
-          log(`Found ${failedDeliveries.length} failed webhook deliveries to retry`, 'webhook');
-          
-          // Process each failed delivery
-          for (const delivery of failedDeliveries) {
-            try {
-              const subscription = await storage.getWebhookSubscription(delivery.subscriptionId);
-              if (!subscription || !subscription.isActive) continue;
-              
-              log(`Retrying webhook delivery ${delivery.id}`, 'webhook');
-              
-              // Make the webhook call
-              const response = await axios.post(
-                subscription.url,
-                delivery.payload,
-                {
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'X-FibonRoseTrust-Event': delivery.eventType,
-                    ...subscription.headers
-                  },
-                  timeout: 10000
-                }
-              );
-              
-              // Update delivery status to success
-              await storage.updateWebhookDeliveryStatus(
-                delivery.id,
-                'success',
-                response.status,
-                JSON.stringify(response.data)
-              );
-              
-              log(`Successfully retried webhook delivery ${delivery.id}`, 'webhook');
-            } catch (error) {
-              log(`Error retrying webhook delivery ${delivery.id}: ${error}`, 'webhook');
-              
-              // Update delivery status to failed with incremented attempt count
-              await storage.updateWebhookDeliveryStatus(
-                delivery.id,
-                'failed',
-                error.response?.status,
-                null,
-                error.message
-              );
-            }
-          }
-        } catch (error) {
-          log(`Error in retry-failed-webhooks task: ${error}`, 'webhook');
-        }
-      }
-    );
-    
-    // Example scheduled task: export webhook data to CSV daily
-    this.createBackgroundTask(
-      'export-webhook-data',
-      '0 0 * * *', // daily at midnight
-      async () => {
-        try {
-          log('Running scheduled task: export-webhook-data', 'webhook');
-          await this.exportWebhookDataToCsv();
-        } catch (error) {
-          log(`Error in export-webhook-data task: ${error}`, 'webhook');
-        }
-      }
-    );
-  }
-  
-  /**
-   * Create a new background task
-   * @param taskId Unique identifier for the task
-   * @param schedule Cron schedule expression
-   * @param taskFn Function to execute
-   */
-  public static createBackgroundTask(
-    taskId: string,
-    schedule: string,
-    taskFn: () => Promise<void>
-  ): void {
-    try {
-      // Stop existing task if it exists
-      if (this.activeTasks[taskId]) {
-        this.activeTasks[taskId].stop();
-      }
-      
-      // Create and start new task
-      const job = new CronJob(
-        schedule,
-        async () => {
-          try {
-            await taskFn();
-          } catch (error) {
-            log(`Error in background task ${taskId}: ${error}`, 'webhook');
-          }
-        },
-        null, // onComplete
-        true, // start
-        'UTC' // timezone
-      );
-      
-      this.activeTasks[taskId] = job;
-      log(`Background task ${taskId} created with schedule: ${schedule}`, 'webhook');
-    } catch (error) {
-      log(`Error creating background task ${taskId}: ${error}`, 'webhook');
-    }
-  }
-  
-  /**
-   * Register a custom source handler for webhook validation and normalization
-   * @param source Source identifier (e.g., 'xano', 'notion')
-   * @param handler Handler with validation and normalization functions
-   */
-  public static registerCustomSourceHandler(
+  public async processUniversalWebhook(
     source: string,
-    handler: {
-      validateSignature: (payload: any, headers: Record<string, string>) => boolean;
-      normalize: (data: any) => Record<string, any>;
-    }
-  ): void {
-    this.customSourceHandlers[source] = handler;
-    log(`Registered custom webhook handler for source: ${source}`, 'webhook');
-  }
-  
-  /**
-   * Process an incoming webhook from an external source
-   * @param source Source of the webhook
-   * @param headers HTTP headers
-   * @param body Request body
-   * @returns Processed webhook data
-   */
-  public static async processIncomingWebhook(
-    source: string,
-    headers: Record<string, string>,
-    body: any
-  ): Promise<any> {
+    body: any,
+    headers: Record<string, string>
+  ): Promise<WebhookDelivery> {
     try {
-      log(`Processing incoming webhook from ${source}`, 'webhook');
-      
-      // Validate webhook signature if we have a custom handler
-      if (this.customSourceHandlers[source]) {
-        const isValid = this.customSourceHandlers[source].validateSignature(body, headers);
-        if (!isValid) {
-          throw new Error(`Invalid signature for webhook from ${source}`);
-        }
-        log(`Validated signature for webhook from ${source}`, 'webhook');
-      }
-      
-      // Normalize the webhook data based on source
-      const normalizedData = await this.normalizeWebhookData(source, body);
-      
-      // Validate the webhook data
-      const validationResult = this.validateWebhookData(source, normalizedData);
-      if (!validationResult.valid) {
-        throw new Error(`Invalid webhook data: ${validationResult.error}`);
-      }
-      
-      // Store the webhook data
-      const webhookData = {
-        source,
-        eventType: normalizedData.eventType || 'unknown',
-        timestamp: new Date().toISOString(),
-        rawData: body,
-        normalizedData,
-        status: 'received'
+      // Normalize the webhook based on its source
+      const normalizedWebhook = this.normalizeWebhook(source, body, headers);
+
+      // Create a record of the webhook delivery
+      const delivery: InsertWebhookDelivery = {
+        subscriptionId: 0, // This will be updated for each matching subscription
+        eventType: normalizedWebhook.eventType,
+        payload: normalizedWebhook.payload,
+        status: 'pending'
       };
-      
-      // Here you would store in database - for our demo we'll return the processed data
-      log(`Successfully processed webhook from ${source}`, 'webhook');
-      
-      // Trigger any configured actions for this webhook source/type
-      await this.triggerWebhookActions(source, normalizedData);
-      
-      return {
-        success: true,
-        data: webhookData
-      };
-    } catch (error) {
-      log(`Error processing webhook from ${source}: ${error}`, 'webhook');
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-  
-  /**
-   * Normalize webhook data from different sources into a standard format
-   * @param source Source of the webhook
-   * @param data Raw webhook data
-   * @returns Normalized data
-   */
-  private static async normalizeWebhookData(
-    source: string,
-    data: any
-  ): Promise<Record<string, any>> {
-    // Check if we have a custom handler for this source
-    if (this.customSourceHandlers[source]) {
-      return this.customSourceHandlers[source].normalize(data);
-    }
-    
-    // Default handlers for builtin sources
-    switch (source) {
-      case 'notion':
-        return this.normalizeNotionWebhook(data);
-      case 'pinksync':
-        return this.normalizePinkSyncWebhook(data);
-      case 'xano':
-        return this.normalizeXanoWebhook(data);
-      default:
-        // Generic normalization for unknown sources
-        return {
-          eventType: data.event_type || data.event || data.type || 'unknown',
-          timestamp: data.timestamp || data.created_at || new Date().toISOString(),
-          payload: data,
-          source
-        };
-    }
-  }
-  
-  /**
-   * Normalize a webhook from Notion
-   * @param data Raw Notion webhook data
-   * @returns Normalized data
-   */
-  private static normalizeNotionWebhook(data: any): Record<string, any> {
-    return {
-      eventType: `notion.${data.type || 'unknown'}`,
-      objectId: data.object_id || null,
-      workspaceId: data.workspace_id || null,
-      timestamp: new Date().toISOString(),
-      payload: data
-    };
-  }
-  
-  /**
-   * Normalize a webhook from PinkSync
-   * @param data Raw PinkSync webhook data
-   * @returns Normalized data
-   */
-  private static normalizePinkSyncWebhook(data: any): Record<string, any> {
-    return {
-      eventType: `pinksync.${data.event || 'unknown'}`,
-      projectId: data.project_id || null,
-      userId: data.user_id || null,
-      timestamp: data.timestamp || new Date().toISOString(),
-      payload: data
-    };
-  }
-  
-  /**
-   * Normalize a webhook from Xano
-   * @param data Raw Xano webhook data
-   * @returns Normalized data
-   */
-  private static normalizeXanoWebhook(data: any): Record<string, any> {
-    return {
-      eventType: `xano.${data.event_type || 'unknown'}`,
-      recordId: data.record_id || null,
-      timestamp: data.timestamp || new Date().toISOString(),
-      payload: data
-    };
-  }
-  
-  /**
-   * Validate webhook data
-   * @param source Source of the webhook
-   * @param data Normalized webhook data
-   * @returns Validation result
-   */
-  private static validateWebhookData(
-    source: string,
-    data: Record<string, any>
-  ): { valid: boolean; error?: string } {
-    // Basic validation - ensure required fields are present
-    if (!data.eventType) {
-      return { valid: false, error: 'Missing eventType' };
-    }
-    
-    // Source-specific validation could be added here
-    switch (source) {
-      case 'notion':
-        if (!data.objectId) {
-          return { valid: false, error: 'Missing objectId for Notion webhook' };
-        }
-        break;
-      case 'pinksync':
-        if (!data.projectId) {
-          return { valid: false, error: 'Missing projectId for PinkSync webhook' };
-        }
-        break;
-    }
-    
-    return { valid: true };
-  }
-  
-  /**
-   * Trigger actions based on webhook source and data
-   * @param source Source of the webhook
-   * @param data Normalized webhook data
-   */
-  private static async triggerWebhookActions(
-    source: string,
-    data: Record<string, any>
-  ): Promise<void> {
-    try {
-      // Route to appropriate handler based on source and event type
-      switch (source) {
-        case 'notion':
-          if (data.eventType === 'notion.page_updated') {
-            // Handle Notion page update
-            // For example, sync data to other services
-          }
-          break;
-        case 'pinksync':
-          if (data.eventType === 'pinksync.task_completed') {
-            // Handle PinkSync task completion
-            // For example, trigger a verification process
-          }
-          break;
-        case 'xano':
-          if (data.eventType.startsWith('xano.record_')) {
-            // Handle Xano record events
-            // For example, sync to Notion
-          }
-          break;
-      }
-      
-      // General webhook forwarding to registered subscribers
-      await this.forwardWebhookToSubscribers(data.eventType, data);
-    } catch (error) {
-      log(`Error triggering webhook actions: ${error}`, 'webhook');
-    }
-  }
-  
-  /**
-   * Forward a webhook to all subscribers
-   * @param eventType Event type
-   * @param data Webhook data
-   */
-  private static async forwardWebhookToSubscribers(
-    eventType: string,
-    data: Record<string, any>
-  ): Promise<void> {
-    try {
-      // Find all active subscriptions for this event type
+
+      // Find subscriptions that match this event type
       const subscriptions = await storage.getWebhookSubscriptions();
       const matchingSubscriptions = subscriptions.filter(
-        subscription => subscription.isActive && subscription.events.includes(eventType as any)
+        (sub) => sub.isActive && sub.events.includes(normalizedWebhook.eventType)
       );
-      
+
       if (matchingSubscriptions.length === 0) {
-        return;
+        // No matching subscriptions, just record the delivery
+        const deliveryRecord = await storage.createWebhookDelivery({
+          ...delivery,
+          status: 'skipped',
+          errorMessage: 'No matching active subscriptions found'
+        });
+        return deliveryRecord;
       }
-      
-      log(`Forwarding webhook for event ${eventType} to ${matchingSubscriptions.length} subscribers`, 'webhook');
-      
-      // Forward to each subscription
+
+      // Process matching subscriptions
+      let successCount = 0;
       for (const subscription of matchingSubscriptions) {
         try {
-          // Create signature for the webhook
-          const signature = this.createSignature(data, subscription.secret);
-          
-          // Set up the headers
-          const headers = {
-            'Content-Type': 'application/json',
-            'X-FibonRoseTrust-Signature': signature,
-            'X-FibonRoseTrust-Event': eventType,
-            ...subscription.headers
-          };
-          
-          // Make the POST request to the webhook URL
-          await axios.post(subscription.url, data, {
-            headers,
-            timeout: 10000
+          // Create a delivery record for this subscription
+          const subDelivery = await storage.createWebhookDelivery({
+            ...delivery,
+            subscriptionId: subscription.id
           });
-          
-          log(`Successfully forwarded webhook to ${subscription.name}`, 'webhook');
+
+          // Send the webhook
+          await this.sendWebhook(subDelivery, subscription.url, subscription.secret, subscription.headers as Record<string, string> || {});
+          successCount++;
         } catch (error) {
-          log(`Error forwarding webhook to ${subscription.name}: ${error}`, 'webhook');
+          // Log error but continue with next subscription
+          log(`Error processing webhook for subscription ${subscription.id}: ${error instanceof Error ? error.message : 'Unknown error'}`, 'webhook');
         }
       }
+
+      // Return the last delivery record
+      const lastDelivery = await storage.getWebhookDeliveries();
+      return lastDelivery[lastDelivery.length - 1];
     } catch (error) {
-      log(`Error forwarding webhook: ${error}`, 'webhook');
-    }
-  }
-  
-  /**
-   * Create a signature for webhook payload
-   * @param payload Webhook payload
-   * @param secret Secret for signing
-   * @returns Signature
-   */
-  private static createSignature(payload: any, secret: string): string {
-    const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
-    const hmac = crypto.createHmac('sha256', secret);
-    return hmac.update(payloadString).digest('hex');
-  }
-  
-  /**
-   * Export webhook data to CSV
-   * @param filter Optional filter for the data to export
-   * @returns Path to the exported CSV file
-   */
-  public static async exportWebhookDataToCsv(filter?: Record<string, any>): Promise<string> {
-    try {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `webhook-data-${timestamp}.csv`;
-      const filepath = path.join(this.exportDir, filename);
-      
-      // Get webhook deliveries
-      const deliveries = await storage.getWebhookDeliveries();
-      
-      // Apply filter if provided
-      const filteredDeliveries = filter
-        ? deliveries.filter(d => {
-            // Implement filtering logic based on the filter object
-            // This is a simple example that checks if all filter criteria match
-            return Object.entries(filter).every(([key, value]) => {
-              return d[key] === value;
-            });
-          })
-        : deliveries;
-      
-      // Transform data for CSV export
-      const csvData = filteredDeliveries.map(d => ({
-        id: d.id,
-        subscriptionId: d.subscriptionId,
-        eventType: d.eventType,
-        status: d.status,
-        statusCode: d.statusCode,
-        createdAt: d.createdAt,
-        processedAt: d.processedAt,
-        attempts: d.attempts,
-        payloadJson: JSON.stringify(d.payload)
-      }));
-      
-      // Write to CSV file
-      const writableStream = fs.createWriteStream(filepath);
-      
-      return new Promise((resolve, reject) => {
-        csv.write(csvData, { headers: true })
-          .pipe(writableStream)
-          .on('finish', () => {
-            log(`Exported ${csvData.length} webhook records to ${filepath}`, 'webhook');
-            resolve(filepath);
-          })
-          .on('error', (error) => {
-            log(`Error exporting webhook data: ${error}`, 'webhook');
-            reject(error);
-          });
-      });
-    } catch (error) {
-      log(`Error exporting webhook data: ${error}`, 'webhook');
+      log(`Error in processUniversalWebhook: ${error instanceof Error ? error.message : 'Unknown error'}`, 'webhook');
       throw error;
     }
   }
-  
+
   /**
-   * Import webhook subscriptions from CSV
-   * @param filepath Path to the CSV file
-   * @returns Number of imported records
+   * Send a webhook to a subscription endpoint
+   * @param delivery The webhook delivery record
+   * @param url The destination URL
+   * @param secret The webhook secret for signature
+   * @param headers Additional headers to include
    */
-  public static async importSubscriptionsFromCsv(filepath: string): Promise<number> {
+  public async sendWebhook(
+    delivery: WebhookDelivery,
+    url: string,
+    secret: string,
+    headers: Record<string, string> = {}
+  ): Promise<void> {
+    try {
+      // Prepare the payload
+      const payload = {
+        id: delivery.id,
+        event: delivery.eventType,
+        created_at: delivery.createdAt.toISOString(),
+        data: delivery.payload
+      };
+
+      // Calculate signature if secret is provided
+      let signature = '';
+      if (secret) {
+        const hmac = crypto.createHmac('sha256', secret);
+        hmac.update(JSON.stringify(payload));
+        signature = hmac.digest('hex');
+      }
+
+      // Prepare headers
+      const requestHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'FibonroseTrust-Webhook/1.0',
+        'X-Webhook-ID': String(delivery.id),
+        'X-Webhook-Signature': signature,
+        ...headers
+      };
+
+      // Send the webhook
+      const response = await axios.post(url, payload, {
+        headers: requestHeaders,
+        timeout: 10000 // 10 second timeout
+      });
+
+      // Update delivery status based on response
+      await storage.updateWebhookDeliveryStatus(
+        delivery.id,
+        'success',
+        response.status,
+        JSON.stringify({
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+          data: response.data
+        }).substring(0, 5000) // Limit response size
+      );
+    } catch (error) {
+      // Handle errors
+      if (axios.isAxiosError(error)) {
+        await storage.updateWebhookDeliveryStatus(
+          delivery.id,
+          'failed',
+          error.response?.status || null,
+          error.response ? JSON.stringify({
+            status: error.response.status,
+            statusText: error.response.statusText,
+            headers: error.response.headers,
+            data: error.response.data
+          }).substring(0, 5000) : null,
+          error.message
+        );
+      } else {
+        await storage.updateWebhookDeliveryStatus(
+          delivery.id,
+          'failed',
+          null,
+          null,
+          error instanceof Error ? error.message : 'Unknown error'
+        );
+      }
+    }
+  }
+
+  /**
+   * Test a webhook subscription by sending a test event
+   * @param subscriptionId The ID of the subscription to test
+   * @param eventType The event type to send
+   * @param payload The payload to send
+   * @returns The delivery record
+   */
+  public async testWebhook(
+    subscriptionId: number,
+    eventType: EventType,
+    payload: any
+  ): Promise<WebhookDelivery> {
+    try {
+      // Get the subscription
+      const subscription = await storage.getWebhookSubscription(subscriptionId);
+      if (!subscription) {
+        throw new Error(`Webhook subscription ${subscriptionId} not found`);
+      }
+
+      // Create a test delivery
+      const delivery: InsertWebhookDelivery = {
+        subscriptionId,
+        eventType,
+        payload,
+        status: 'pending'
+      };
+
+      // Create and send the webhook
+      const deliveryRecord = await storage.createWebhookDelivery(delivery);
+      await this.sendWebhook(
+        deliveryRecord,
+        subscription.url,
+        subscription.secret,
+        subscription.headers as Record<string, string> || {}
+      );
+
+      // Return the updated delivery record
+      return await storage.getWebhookDelivery(deliveryRecord.id) as WebhookDelivery;
+    } catch (error) {
+      log(`Error in testWebhook: ${error instanceof Error ? error.message : 'Unknown error'}`, 'webhook');
+      throw error;
+    }
+  }
+
+  /**
+   * Import webhook subscriptions from a CSV file
+   * @param csvFileBuffer The CSV file as a buffer
+   * @returns Number of imported subscriptions
+   */
+  public async importWebhooks(csvFileBuffer: Buffer): Promise<number> {
     return new Promise((resolve, reject) => {
-      const results = [];
-      
-      fs.createReadStream(filepath)
-        .pipe(csv.parse({ headers: true }))
-        .on('data', (data) => {
-          results.push(data);
+      const results: InsertWebhookSubscription[] = [];
+      const stream = Readable.from(csvFileBuffer);
+
+      stream
+        .pipe(csvParse({ headers: true, trim: true }))
+        .on('data', (data: any) => {
+          // Convert events from comma-separated string to array
+          const events = data.events.split(',').map((e: string) => e.trim());
+          
+          // Convert isActive from string to boolean
+          const isActive = data.isActive === 'true' || data.isActive === '1';
+          
+          // Parse headers from JSON string if present
+          let headers = {};
+          try {
+            if (data.headers) {
+              headers = JSON.parse(data.headers);
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+
+          results.push({
+            name: data.name,
+            url: data.url,
+            secret: data.secret || '',
+            events,
+            isActive,
+            partnerId: data.partnerId ? parseInt(data.partnerId, 10) : undefined,
+            headers
+          });
         })
+        .on('error', reject)
         .on('end', async () => {
           try {
             let importCount = 0;
-            
-            for (const row of results) {
-              try {
-                // Parse events array from JSON string
-                const events = row.events ? JSON.parse(row.events) : [];
-                // Parse headers object from JSON string
-                const headers = row.headers ? JSON.parse(row.headers) : {};
-                
-                // Create webhook subscription
-                await storage.createWebhookSubscription({
-                  name: row.name,
-                  url: row.url,
-                  secret: row.secret || crypto.randomBytes(16).toString('hex'),
-                  events,
-                  isActive: row.isActive === 'true',
-                  partnerId: parseInt(row.partnerId) || null,
-                  headers
-                });
-                
-                importCount++;
-              } catch (error) {
-                log(`Error importing subscription row: ${error}`, 'webhook');
-              }
+            for (const webhook of results) {
+              await storage.createWebhookSubscription(webhook);
+              importCount++;
             }
-            
-            log(`Imported ${importCount} webhook subscriptions from ${filepath}`, 'webhook');
             resolve(importCount);
           } catch (error) {
-            log(`Error importing webhook subscriptions: ${error}`, 'webhook');
             reject(error);
           }
-        })
-        .on('error', (error) => {
-          log(`Error parsing CSV: ${error}`, 'webhook');
-          reject(error);
         });
     });
   }
-  
+
   /**
-   * Register a PinkSync integration
-   * @param apiKey PinkSync API key
-   * @param projectId PinkSync project ID
-   * @param webhookUrl URL to receive PinkSync webhooks
+   * Export webhook subscriptions to a CSV file
+   * @returns The path to the exported file
    */
-  public static registerPinkSyncIntegration(
-    apiKey: string,
-    projectId: string,
-    webhookUrl: string
-  ): void {
-    this.externalServices.pinksync = {
-      apiKey,
-      projectId,
-      webhookUrl
-    };
+  public async exportWebhooks(): Promise<string> {
+    const webhooks = await storage.getWebhookSubscriptions();
     
-    log(`Registered PinkSync integration for project ${projectId}`, 'webhook');
+    // Format webhooks for CSV export
+    const formattedWebhooks = webhooks.map(webhook => ({
+      id: webhook.id,
+      name: webhook.name,
+      url: webhook.url,
+      secret: webhook.secret,
+      events: webhook.events.join(','),
+      isActive: webhook.isActive ? 'true' : 'false',
+      partnerId: webhook.partnerId || '',
+      headers: JSON.stringify(webhook.headers),
+      createdAt: webhook.createdAt.toISOString()
+    }));
+
+    // Define the export path
+    const filename = `webhook_subscriptions_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`;
+    const filePath = path.join(this.exportPath, filename);
+
+    // Write to CSV
+    return new Promise((resolve, reject) => {
+      const ws = fs.createWriteStream(filePath);
+      csv.write(formattedWebhooks, { headers: true })
+        .pipe(ws)
+        .on('finish', () => resolve(filePath))
+        .on('error', reject);
+    });
   }
-  
+
   /**
-   * Register a Xano AI integration
-   * @param apiKey Xano API key
-   * @param baseUrl Xano API base URL
-   * @param webhookSecret Secret for validating Xano webhooks
-   * @param aiEnabled Whether to enable AI features
+   * Retry failed webhook deliveries
+   * @param maxAttempts Maximum number of retry attempts (default: 5)
    */
-  public static registerXanoIntegration(
-    apiKey: string,
-    baseUrl: string,
-    webhookSecret?: string,
-    aiEnabled: boolean = false
-  ): void {
-    this.externalServices.xano = {
-      apiKey,
-      baseUrl,
-      webhookSecret,
-      aiEnabled
-    };
-    
-    log(`Registered Xano integration with base URL ${baseUrl}`, 'webhook');
-  }
-  
-  /**
-   * Get all webhook data with optional filtering
-   * @param filter Optional filter criteria
-   * @returns Filtered webhook data
-   */
-  public static async getWebhookData(filter?: Record<string, any>): Promise<any[]> {
+  private async retryFailedWebhooks(maxAttempts = 5): Promise<void> {
     try {
-      // Get webhook deliveries
+      // Get all failed webhook deliveries with fewer than maxAttempts
       const deliveries = await storage.getWebhookDeliveries();
-      
-      // Apply filter if provided
-      if (filter) {
-        return deliveries.filter(d => {
-          // Implement filtering logic based on the filter object
-          return Object.entries(filter).every(([key, value]) => {
-            // Handle special cases like date ranges
-            if (key === 'createdAfter' && d.createdAt) {
-              return new Date(d.createdAt) > new Date(value as string);
-            }
-            if (key === 'createdBefore' && d.createdAt) {
-              return new Date(d.createdAt) < new Date(value as string);
-            }
-            // Default exact match
-            return d[key] === value;
-          });
-        });
+      const failedDeliveries = deliveries.filter(
+        d => d.status === 'failed' && d.attempts < maxAttempts
+      );
+
+      log(`Retrying ${failedDeliveries.length} failed webhook deliveries`, 'webhook');
+
+      for (const delivery of failedDeliveries) {
+        try {
+          // Get the subscription
+          const subscription = await storage.getWebhookSubscription(delivery.subscriptionId);
+          if (!subscription || !subscription.isActive) {
+            // Skip inactive or deleted subscriptions
+            continue;
+          }
+
+          // Retry sending the webhook
+          await this.sendWebhook(
+            delivery,
+            subscription.url,
+            subscription.secret,
+            subscription.headers as Record<string, string> || {}
+          );
+        } catch (error) {
+          // Log error but continue with next delivery
+          log(`Error retrying webhook delivery ${delivery.id}: ${error instanceof Error ? error.message : 'Unknown error'}`, 'webhook');
+        }
       }
-      
-      return deliveries;
     } catch (error) {
-      log(`Error getting webhook data: ${error}`, 'webhook');
-      throw error;
+      log(`Error in retryFailedWebhooks: ${error instanceof Error ? error.message : 'Unknown error'}`, 'webhook');
     }
   }
+
+  /**
+   * Export webhook data to CSV files
+   */
+  private async exportWebhookData(): Promise<void> {
+    try {
+      // Export webhook subscriptions
+      const subscriptionsPath = await this.exportWebhooks();
+      log(`Exported webhook subscriptions to ${subscriptionsPath}`, 'webhook');
+
+      // Export webhook deliveries
+      const deliveries = await storage.getWebhookDeliveries();
+      
+      // Format deliveries for CSV export
+      const formattedDeliveries = deliveries.map(delivery => {
+        const basicDelivery: Record<string, any> = {
+          id: delivery.id,
+          subscriptionId: delivery.subscriptionId,
+          eventType: delivery.eventType,
+          status: delivery.status,
+          statusCode: delivery.statusCode || '',
+          attempts: delivery.attempts,
+          createdAt: delivery.createdAt.toISOString(),
+          processedAt: delivery.processedAt ? delivery.processedAt.toISOString() : ''
+        };
+
+        // Add truncated payload, response and error message
+        if (delivery.payload) {
+          basicDelivery.payload = JSON.stringify(delivery.payload).substring(0, 500);
+        }
+        
+        if (delivery.response) {
+          basicDelivery.response = delivery.response.substring(0, 500);
+        }
+        
+        if (delivery.errorMessage) {
+          basicDelivery.errorMessage = delivery.errorMessage.substring(0, 500);
+        }
+
+        return basicDelivery;
+      });
+
+      // Define the export path
+      const filename = `webhook_deliveries_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`;
+      const filePath = path.join(this.exportPath, filename);
+
+      // Write to CSV
+      await new Promise<void>((resolve, reject) => {
+        const ws = fs.createWriteStream(filePath);
+        csv.write(formattedDeliveries, { headers: true })
+          .pipe(ws)
+          .on('finish', () => resolve())
+          .on('error', reject);
+      });
+
+      log(`Exported webhook deliveries to ${filePath}`, 'webhook');
+    } catch (error) {
+      log(`Error in exportWebhookData: ${error instanceof Error ? error.message : 'Unknown error'}`, 'webhook');
+    }
+  }
+
+  /**
+   * Normalize a webhook based on its source
+   * @param source The source of the webhook
+   * @param body The webhook body
+   * @param headers The webhook headers
+   * @returns A normalized webhook
+   */
+  private normalizeWebhook(
+    source: string,
+    body: any,
+    headers: Record<string, string>
+  ): NormalizedWebhook {
+    switch (source.toLowerCase()) {
+      case 'xano':
+        return this.normalizeXanoWebhook(body, headers);
+      case 'notion':
+        return this.normalizeNotionWebhook(body, headers);
+      default:
+        // Generic normalization for unknown sources
+        return {
+          source,
+          eventType: body.event_type || EventTypes.GENERIC,
+          payload: body,
+          timestamp: new Date().toISOString(),
+          metadata: { headers }
+        };
+    }
+  }
+
+  /**
+   * Normalize a webhook from Xano
+   * @param body The webhook body
+   * @param headers The webhook headers
+   * @returns A normalized webhook
+   */
+  private normalizeXanoWebhook(
+    body: any,
+    headers: Record<string, string>
+  ): NormalizedWebhook {
+    // Use our dedicated Xano integration
+    return XanoIntegration.processWebhook(headers, body) as NormalizedWebhook;
+  }
+
+  /**
+   * Normalize a webhook from Notion
+   * @param body The webhook body
+   * @param headers The webhook headers
+   * @returns A normalized webhook
+   */
+  private normalizeNotionWebhook(
+    body: any,
+    headers: Record<string, string>
+  ): NormalizedWebhook {
+    // Extract Notion event type
+    let eventType = EventTypes.GENERIC;
+    if (body.type === 'block_changed') {
+      eventType = 'notion.block.changed';
+    } else if (body.type === 'page_changed') {
+      eventType = 'notion.page.changed';
+    } else if (body.type === 'database_changed') {
+      eventType = 'notion.database.changed';
+    }
+
+    return {
+      source: 'notion',
+      eventType: eventType as EventType,
+      payload: body,
+      timestamp: body.timestamp || new Date().toISOString(),
+      metadata: {
+        notionWorkspaceId: body.workspace_id,
+        notionObjectId: body.object_id,
+        headers
+      }
+    };
+  }
 }
+
+// Export the singleton instance
+export const universalWebhookManager = UniversalWebhookManager.getInstance();
