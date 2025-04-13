@@ -10,4 +10,74 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+  
+  /* Accessibility Classes */
+  .high-contrast-mode {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 252 100% 70%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 85%;
+    --accent: 270 100% 70%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 40%;
+    --input: 0 0% 40%;
+    --ring: 252 100% 70%;
+  }
+  
+  .large-text-mode {
+    font-size: 120%;
+    line-height: 1.5;
+  }
+  
+  .large-text-mode h1 {
+    font-size: 2.5rem;
+  }
+  
+  .large-text-mode h2 {
+    font-size: 2rem;
+  }
+  
+  .large-text-mode h3 {
+    font-size: 1.75rem;
+  }
+  
+  .large-text-mode p, .large-text-mode li, .large-text-mode label {
+    font-size: 1.2rem;
+  }
+  
+  .large-text-mode button, .large-text-mode input {
+    font-size: 1.1rem;
+  }
+  
+  .reduced-motion * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+  
+  /* Visual Pulsate Animation for Deaf Accessibility */
+  @keyframes visual-pulsate {
+    0% {
+      box-shadow: 0 0 0 0 rgba(var(--primary), 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(var(--primary), 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(var(--primary), 0);
+    }
+  }
+  
+  .visual-pulsate {
+    animation: visual-pulsate 2s infinite;
+  }
 }

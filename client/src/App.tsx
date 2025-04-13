@@ -12,6 +12,8 @@ import Settings from "@/pages/Settings";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useSidebar } from "./hooks/use-sidebar";
+import { ASLSupport } from "@/components/accessibility/ASLSupport";
+import { VisualAccessibility } from "@/components/accessibility/VisualAccessibility";
 
 function Router() {
   const { isSidebarOpen } = useSidebar();
@@ -33,6 +35,10 @@ function Router() {
           </Switch>
         </main>
       </div>
+      
+      {/* Accessibility Features */}
+      <ASLSupport />
+      <VisualAccessibility />
     </div>
   );
 }

@@ -238,8 +238,8 @@ export default function NftAuthentication() {
                   <div className="h-1.5 bg-gradient-to-r from-primary-400 to-primary-600" />
                   <CardHeader className="p-4 sm:p-6">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 bg-primary-100 dark:bg-primary-900 rounded-full p-2 sm:p-2.5 mr-3 sm:mr-4">
-                        <span className="material-icons text-sm sm:text-base text-primary">token</span>
+                      <div className="flex-shrink-0 bg-primary-100 dark:bg-primary-900 rounded-full p-2 sm:p-2.5 mr-3 sm:mr-4 visual-pulsate">
+                        <span className="material-icons text-sm sm:text-base text-primary">fingerprint</span>
                       </div>
                       <div>
                         <h2 className="text-lg sm:text-xl font-semibold tracking-tight">NFT Verification</h2>
@@ -325,7 +325,7 @@ export default function NftAuthentication() {
                     <Button 
                       onClick={handleVerifyNft}
                       disabled={isVerifying || !walletAddress || !tokenId}
-                      className="gap-1 text-xs sm:text-sm"
+                      className={`gap-1 text-xs sm:text-sm ${(!isVerifying && walletAddress && tokenId) ? 'visual-pulsate' : ''}`}
                       size="sm"
                     >
                       {isVerifying ? (
