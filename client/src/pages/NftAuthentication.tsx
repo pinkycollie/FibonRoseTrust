@@ -218,140 +218,342 @@ export default function NftAuthentication() {
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">NFT Authentication</h1>
+        <div className="flex flex-col space-y-2 mb-6">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-800 dark:from-primary-400 dark:to-primary-600">FibonRoseID Authentication</h1>
+          <p className="text-lg text-muted-foreground">Secure digital identity verification with blockchain technology</p>
+        </div>
         
         <Tabs defaultValue="verify" className="mt-6">
-          <TabsList className="mb-6">
-            <TabsTrigger value="verify">Verify NFT</TabsTrigger>
-            <TabsTrigger value="mint">Mint ID NFT</TabsTrigger>
-            <TabsTrigger value="showcase">NFT Showcase</TabsTrigger>
-            <TabsTrigger value="contract">Smart Contract</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 mb-6 rounded-lg bg-muted p-1">
+            <TabsTrigger value="verify" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow">Verify NFT</TabsTrigger>
+            <TabsTrigger value="mint" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow">Mint ID NFT</TabsTrigger>
+            <TabsTrigger value="showcase" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow">NFT Showcase</TabsTrigger>
+            <TabsTrigger value="contract" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow">Smart Contract</TabsTrigger>
           </TabsList>
           
           <TabsContent value="verify">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-primary-100 dark:bg-primary-900 rounded-md p-3 mr-4">
-                      <span className="material-icons text-primary-600 dark:text-primary-400">token</span>
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">NFT Verification</h2>
-                      <CardDescription>Connect your NFT to authenticate your identity.</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <Label htmlFor="wallet-address">Wallet Address</Label>
-                      <div className="flex space-x-2">
-                        <Input
-                          id="wallet-address"
-                          type="text"
-                          placeholder="0x..."
-                          value={walletAddress}
-                          onChange={(e) => setWalletAddress(e.target.value)}
-                          disabled={isVerifying || isConnected}
-                          className="flex-1"
-                        />
-                        {!isConnected && (
-                          <Button 
-                            onClick={connectWallet} 
-                            variant="outline"
-                            disabled={isVerifying}
-                          >
-                            Connect
-                          </Button>
-                        )}
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              <div className="space-y-8">
+                <Card className="overflow-hidden border-0 shadow-md">
+                  <div className="h-1.5 bg-gradient-to-r from-primary-400 to-primary-600" />
+                  <CardHeader>
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 bg-primary-100 dark:bg-primary-900 rounded-full p-2.5 mr-4">
+                        <span className="material-icons text-primary">token</span>
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold tracking-tight">NFT Verification</h2>
+                        <CardDescription>Connect your blockchain wallet to verify your identity NFT</CardDescription>
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="token-id">Token ID</Label>
-                      <Input
-                        id="token-id"
-                        type="text"
-                        placeholder="Enter token ID"
-                        value={tokenId}
-                        onChange={(e) => setTokenId(e.target.value)}
-                        disabled={isVerifying}
-                      />
+                  </CardHeader>
+                  
+                  <CardContent className="p-6 pt-0">
+                    <div className="p-4 rounded-lg bg-muted mb-6">
+                      <div className="flex items-start">
+                        <span className="material-icons text-amber-500 mt-0.5 mr-2">info</span>
+                        <p className="text-sm text-muted-foreground">
+                          Your NFT must be in the connected wallet to verify. The verification process confirms your identity without sharing personal data.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-end border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <Button 
-                    onClick={handleVerifyNft}
-                    disabled={isVerifying || !walletAddress || !tokenId}
-                  >
-                    {isVerifying ? "Verifying..." : "Verify NFT"}
-                  </Button>
-                </CardFooter>
-              </Card>
+                  
+                    <div className="space-y-5">
+                      <div className="space-y-2.5">
+                        <Label htmlFor="wallet-address" className="text-base font-medium">Wallet Address</Label>
+                        <div className="flex space-x-2">
+                          <div className="relative flex-1">
+                            <Input
+                              id="wallet-address"
+                              type="text"
+                              placeholder="0x..."
+                              value={walletAddress}
+                              onChange={(e) => setWalletAddress(e.target.value)}
+                              disabled={isVerifying || isConnected}
+                              className={`pl-10 ${isConnected ? 'bg-muted/50 border-muted' : ''}`}
+                            />
+                            <span className="absolute left-3 top-2.5 text-muted-foreground">
+                              <span className="material-icons text-sm">account_balance_wallet</span>
+                            </span>
+                          </div>
+                          {!isConnected && (
+                            <Button 
+                              onClick={connectWallet} 
+                              className="gap-1 bg-gradient-to-r from-primary-600 to-primary-500 text-white hover:from-primary-700 hover:to-primary-600"
+                              disabled={isVerifying}
+                            >
+                              <span className="material-icons text-sm">link</span>
+                              Connect
+                            </Button>
+                          )}
+                          {isConnected && (
+                            <Button
+                              variant="outline"
+                              className="gap-1 border-green-500 text-green-600"
+                              disabled
+                            >
+                              <span className="material-icons text-sm">check_circle</span>
+                              Connected
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2.5">
+                        <Label htmlFor="token-id" className="text-base font-medium">Token ID</Label>
+                        <div className="relative">
+                          <Input
+                            id="token-id"
+                            type="text"
+                            placeholder="Enter your NFT token ID"
+                            value={tokenId}
+                            onChange={(e) => setTokenId(e.target.value)}
+                            disabled={isVerifying}
+                            className="pl-10"
+                          />
+                          <span className="absolute left-3 top-2.5 text-muted-foreground">
+                            <span className="material-icons text-sm">tag</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  
+                  <CardFooter className="px-6 py-4 bg-muted/30 border-t flex justify-end">
+                    <Button 
+                      onClick={handleVerifyNft}
+                      disabled={isVerifying || !walletAddress || !tokenId}
+                      className="gap-1"
+                    >
+                      {isVerifying ? (
+                        <>
+                          <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                          Verifying...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-icons text-sm">verified_user</span>
+                          Verify NFT
+                        </>
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+                
+                {verificationResult && (
+                  <Card className="overflow-hidden border-0 shadow-md">
+                    <div className="h-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600" />
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start">
+                        <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center mr-3">
+                          <span className="material-icons text-emerald-600 dark:text-emerald-400">verified</span>
+                        </div>
+                        <div>
+                          <CardTitle>Verification Successful</CardTitle>
+                          <CardDescription>Token verified on the blockchain</CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="pb-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col space-y-1 bg-muted/30 p-3 rounded-md">
+                          <p className="text-xs font-medium text-muted-foreground">Token ID</p>
+                          <p className="font-medium text-sm truncate">{verificationResult.tokenId}</p>
+                        </div>
+                        
+                        <div className="flex flex-col space-y-1 bg-muted/30 p-3 rounded-md">
+                          <p className="text-xs font-medium text-muted-foreground">Status</p>
+                          <p className="font-medium text-sm flex items-center">
+                            <span className={`inline-block h-2 w-2 rounded-full mr-2 ${
+                              verificationResult.statusText === 'VERIFIED' ? 'bg-green-500' : 
+                              verificationResult.statusText === 'PENDING' ? 'bg-amber-500' : 'bg-red-500'
+                            }`}></span>
+                            {verificationResult.statusText}
+                          </p>
+                        </div>
+                        
+                        <div className="flex flex-col space-y-1 bg-muted/30 p-3 rounded-md">
+                          <p className="text-xs font-medium text-muted-foreground">Verification Level</p>
+                          <div className="flex items-center">
+                            <span className="font-medium text-sm mr-2">{verificationResult.level}</span>
+                            <div className="h-2 flex-1 bg-muted overflow-hidden rounded-full">
+                              <div 
+                                className="h-full bg-gradient-to-r from-primary-500 to-primary-400" 
+                                style={{ width: `${verificationResult.level * 20}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col space-y-1 bg-muted/30 p-3 rounded-md">
+                          <p className="text-xs font-medium text-muted-foreground">Verified On</p>
+                          <p className="font-medium text-sm flex items-center">
+                            <span className="material-icons text-xs mr-1.5">event</span>
+                            {verificationResult.verificationDate.toLocaleString()}
+                          </p>
+                        </div>
+                        
+                        <div className="col-span-2 flex flex-col space-y-1 bg-muted/30 p-3 rounded-md">
+                          <p className="text-xs font-medium text-muted-foreground">Verified By</p>
+                          <p className="font-medium text-sm break-all">{verificationResult.verifier}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                    
+                    <CardFooter className="pt-2 pb-4 flex space-x-2">
+                      <Button variant="ghost" size="sm" className="text-xs">
+                        <span className="material-icons text-xs mr-1">file_download</span>
+                        Download Proof
+                      </Button>
+                      <Button size="sm" className="text-xs">
+                        <span className="material-icons text-xs mr-1">share</span>
+                        Share Verification
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                )}
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">About NFT Authentication</h2>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose dark:prose-invert">
-                    <p>NFT authentication is a secure way to verify your identity using blockchain technology.</p>
-                    
-                    <h3 className="text-base font-medium mt-4">How it works</h3>
-                    <ul className="space-y-1 list-disc pl-5 text-sm">
-                      <li>Connect your wallet containing verification NFTs</li>
-                      <li>We verify ownership of specific tokens on the blockchain</li>
-                      <li>Your identity is verified without sharing personal information</li>
-                      <li>Trust score increases based on the verified NFTs</li>
-                    </ul>
-                    
-                    <Separator className="my-4" />
-                    
-                    <h3 className="text-base font-medium">Benefits</h3>
-                    <ul className="space-y-1 list-disc pl-5 text-sm">
-                      <li>Privacy-focused: verify without sharing personal data</li>
-                      <li>Self-sovereign: you control your identity credentials</li>
-                      <li>Interoperable: works across different applications</li>
-                      <li>Secure: cryptographically verifiable on the blockchain</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="space-y-8">
+                <Card className="overflow-hidden border-0 shadow-md">
+                  <CardHeader className="pb-3 border-b border-muted">
+                    <CardTitle>How Verification Works</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="p-6 space-y-6">
+                      <div className="flex">
+                        <div className="mr-4 flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary">
+                            <span className="material-icons text-sm">filter_1</span>
+                          </div>
+                          <div className="w-0.5 flex-1 bg-muted my-2"></div>
+                        </div>
+                        <div>
+                          <h3 className="text-base font-medium">Connect Wallet</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Link your blockchain wallet to the application to verify ownership of your NFT.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex">
+                        <div className="mr-4 flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary">
+                            <span className="material-icons text-sm">filter_2</span>
+                          </div>
+                          <div className="w-0.5 flex-1 bg-muted my-2"></div>
+                        </div>
+                        <div>
+                          <h3 className="text-base font-medium">Verify Ownership</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            The system confirms that your wallet is the rightful owner of the identity NFT on the blockchain.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex">
+                        <div className="mr-4 flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary">
+                            <span className="material-icons text-sm">filter_3</span>
+                          </div>
+                          <div className="w-0.5 flex-1 bg-muted my-2"></div>
+                        </div>
+                        <div>
+                          <h3 className="text-base font-medium">Check Verification Status</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            The NFT contains verification data that shows your identity has been validated by trusted authorities.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex">
+                        <div className="mr-4">
+                          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary">
+                            <span className="material-icons text-sm">filter_4</span>
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-base font-medium">Trust Score Updated</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Your trust score is automatically adjusted based on the verification level of your NFT.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-primary-50 dark:bg-primary-950/20 border-primary-100 dark:border-primary-900/30 overflow-hidden shadow-md">
+                  <CardHeader className="pb-4">
+                    <CardTitle>Benefits of NFT Authentication</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-start">
+                        <div className="w-9 h-9 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary mr-3 shrink-0 mt-0.5">
+                          <span className="material-icons text-sm">lock</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Privacy-Focused</h4>
+                          <p className="text-xs text-muted-foreground mt-1">Verify without sharing personal data</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="w-9 h-9 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary mr-3 shrink-0 mt-0.5">
+                          <span className="material-icons text-sm">account_circle</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Self-Sovereign</h4>
+                          <p className="text-xs text-muted-foreground mt-1">You control your identity credentials</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="w-9 h-9 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary mr-3 shrink-0 mt-0.5">
+                          <span className="material-icons text-sm">swap_horiz</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Interoperable</h4>
+                          <p className="text-xs text-muted-foreground mt-1">Works across different applications</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="w-9 h-9 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary mr-3 shrink-0 mt-0.5">
+                          <span className="material-icons text-sm">verified</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Secure</h4>
+                          <p className="text-xs text-muted-foreground mt-1">Cryptographically verifiable on blockchain</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="w-9 h-9 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary mr-3 shrink-0 mt-0.5">
+                          <span className="material-icons text-sm">share</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Shareable</h4>
+                          <p className="text-xs text-muted-foreground mt-1">Easily share verification status with others</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="w-9 h-9 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary mr-3 shrink-0 mt-0.5">
+                          <span className="material-icons text-sm">history</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm">Immutable History</h4>
+                          <p className="text-xs text-muted-foreground mt-1">Complete audit trail of all verifications</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-            
-            {verificationResult && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Verification Result</CardTitle>
-                  <CardDescription>Details from the blockchain for this NFT</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Token ID</p>
-                      <p className="font-medium">{verificationResult.tokenId}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
-                      <p className="font-medium">{verificationResult.statusText}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Verification Level</p>
-                      <p className="font-medium">{verificationResult.level}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Verified On</p>
-                      <p className="font-medium">{verificationResult.verificationDate.toLocaleString()}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Verified By</p>
-                      <p className="font-medium break-all">{verificationResult.verifier}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </TabsContent>
           
           <TabsContent value="mint">
@@ -435,39 +637,122 @@ export default function NftAuthentication() {
           </TabsContent>
           
           <TabsContent value="showcase">
-            <div className="grid grid-cols-1 gap-6">
-              <Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2">
                 <CardHeader>
-                  <CardTitle>Your Digital Identity Card</CardTitle>
-                  <CardDescription>Interactive 3D visualization of your identity NFT</CardDescription>
+                  <CardTitle className="flex items-center">
+                    <span className="material-icons mr-2 text-primary">badge</span>
+                    Digital Identity Card
+                  </CardTitle>
+                  <CardDescription>Interactive 3D visualization of your blockchain-secured identity</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0 overflow-hidden rounded-b-lg bg-gradient-to-b from-muted/50 to-muted">
                   {tokenId ? (
-                    <NftCard3D
-                      walletAddress={walletAddress || "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"}
-                      tokenId={tokenId}
-                      ownerName={userData?.name || "Jane Cooper"}
-                      verificationLevel={5}
-                      issueDate={new Date().toLocaleDateString()}
-                      backgroundColor="#1a1a2e"
-                      highlightColor="#4361ee"
-                    />
+                    <div className="p-6">
+                      <NftCard3D
+                        walletAddress={walletAddress || "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"}
+                        tokenId={tokenId}
+                        ownerName={userData?.name || "Jane Cooper"}
+                        verificationLevel={5}
+                        issueDate={new Date().toLocaleDateString()}
+                        backgroundColor="#1a1a2e"
+                        highlightColor="#4361ee"
+                      />
+                      <p className="text-sm text-center mt-4 text-muted-foreground">
+                        <span className="inline-flex items-center font-medium">
+                          <span className="material-icons text-sm mr-1">touch_app</span>
+                          Click to toggle rotation
+                        </span>
+                        <span className="mx-2">•</span>
+                        <span className="inline-flex items-center font-medium">
+                          <span className="material-icons text-sm mr-1">mouse</span>
+                          Mouse over to interact
+                        </span>
+                      </p>
+                    </div>
                   ) : (
-                    <div className="h-96 flex items-center justify-center border border-dashed rounded-lg">
+                    <div className="h-96 flex items-center justify-center border-0 p-6">
                       <div className="text-center">
-                        <span className="material-icons text-4xl text-gray-400 mb-2">view_in_ar</span>
-                        <p className="text-gray-500">No NFT selected. Please verify or mint an NFT first.</p>
-                        <Button variant="outline" className="mt-4" onClick={() => setTokenId("123456789")}>
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                          <span className="material-icons text-2xl text-primary">view_in_ar</span>
+                        </div>
+                        <p className="text-muted-foreground mb-4">No NFT card available. Please verify or mint an NFT first.</p>
+                        <Button variant="outline" onClick={() => setTokenId("123456789")} className="rounded-full px-6">
+                          <span className="material-icons text-sm mr-2">visibility</span>
                           Show Demo Card
                         </Button>
                       </div>
                     </div>
                   )}
-                  <p className="text-sm text-center mt-4 text-gray-500">
-                    Click to toggle rotation. Move your mouse over the card to interact.
-                  </p>
                 </CardContent>
               </Card>
+              
+              <div className="space-y-6">
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-primary-700 dark:text-primary-300">Card Features</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      <li className="flex items-start">
+                        <span className="material-icons text-primary-600 mr-2 mt-0.5 text-sm">fingerprint</span>
+                        <span className="text-sm">Unique Fibonacci spiral security pattern</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="material-icons text-primary-600 mr-2 mt-0.5 text-sm">qr_code_2</span>
+                        <span className="text-sm">Scannable QR code for instant verification</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="material-icons text-primary-600 mr-2 mt-0.5 text-sm">verified_user</span>
+                        <span className="text-sm">Shows current verification level</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="material-icons text-primary-600 mr-2 mt-0.5 text-sm">token</span>
+                        <span className="text-sm">Linked to blockchain with tamper-proof history</span>
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Card Usage</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-start">
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center mr-3 mt-0.5">
+                          <span className="font-semibold text-muted-foreground">1</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Share Card</h4>
+                          <p className="text-sm text-muted-foreground">Send your verification link to entities needing identity proof</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center mr-3 mt-0.5">
+                          <span className="font-semibold text-muted-foreground">2</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">QR Scanning</h4>
+                          <p className="text-sm text-muted-foreground">Allow verification by letting others scan your card's QR code</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center mr-3 mt-0.5">
+                          <span className="font-semibold text-muted-foreground">3</span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Authentication</h4>
+                          <p className="text-sm text-muted-foreground">Sign transactions with your wallet to prove identity</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
           
@@ -546,32 +831,65 @@ export default function NftAuthentication() {
           </TabsContent>
         </Tabs>
 
-        <div className="mt-6">
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Compatible NFT Collections</h2>
-              <CardDescription>These NFT collections can be used for identity verification.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
-                  { name: "NegraSecurity Identity", network: "Ethereum", icon: "verified_user" },
-                  { name: "Decentralized ID", network: "Polygon", icon: "fingerprint" },
-                  { name: "VerifiableCredentials", network: "Solana", icon: "security" },
-                ].map((collection, index) => (
-                  <div key={index} className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-md">
-                    <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-                      <span className="material-icons text-primary-600 dark:text-primary-400">{collection.icon}</span>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{collection.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{collection.network}</p>
-                    </div>
+        <div className="mt-10 mb-4">
+          <div className="flex flex-col items-center text-center mb-8">
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Ecosystem Partners</h2>
+            <p className="text-muted-foreground max-w-2xl">FibonRoseID integrates with these trusted identity providers in the blockchain ecosystem</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { 
+                name: "NegraSecurity Identity", 
+                network: "Ethereum", 
+                icon: "verified_user",
+                description: "Enterprise-grade identity verification with full KYC compliance and legal backing.",
+                color: "from-blue-500 to-blue-700"
+              },
+              { 
+                name: "Decentralized ID", 
+                network: "Polygon", 
+                icon: "fingerprint",
+                description: "Self-sovereign identity solution with biometric authentication and zero-knowledge proofs.",
+                color: "from-purple-500 to-purple-700"
+              },
+              { 
+                name: "VerifiableCredentials", 
+                network: "Solana", 
+                icon: "security",
+                description: "High-throughput credentials platform for fast and low-cost identity verification.",
+                color: "from-green-500 to-green-700"
+              },
+            ].map((collection, index) => (
+              <Card key={index} className="overflow-hidden border-0 shadow-md">
+                <div className={`h-2 bg-gradient-to-r ${collection.color}`} />
+                <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                  <div className="w-12 h-12 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center shrink-0">
+                    <span className="material-icons text-xl text-primary">{collection.icon}</span>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <div>
+                    <CardTitle className="text-xl">{collection.name}</CardTitle>
+                    <CardDescription className="flex items-center">
+                      <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                      {collection.network} Network
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{collection.description}</p>
+                </CardContent>
+                <CardFooter className="border-t bg-muted/40 pt-3 flex justify-between">
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    Learn More
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs">
+                    <span className="material-icons text-sm mr-1">link</span>
+                    Connect
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </div>

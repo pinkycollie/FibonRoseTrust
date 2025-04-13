@@ -4,23 +4,7 @@ import { AuthContext, useAuthProvider } from "@/hooks/use-auth";
 import { createContext, useContext } from "react";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 
-type AppProvidersProps = PropsWithChildren<{}>;
-
-export function AppProviders({ children }: AppProvidersProps) {
-  const sidebarContext = useSidebarProvider();
-  const authContext = useAuthProvider();
-
-  return (
-    <ThemeProvider>
-      <AuthContext.Provider value={authContext}>
-        <SidebarContext.Provider value={sidebarContext}>
-          {children}
-        </SidebarContext.Provider>
-      </AuthContext.Provider>
-    </ThemeProvider>
-  );
-}
-
+// Define Theme Context
 interface ThemeContextType {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
@@ -37,12 +21,31 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-export function ThemeProvider({ children }: PropsWithChildren<{}>) {
+// Theme Provider component definition
+function ThemeProvider({ children }: PropsWithChildren<{}>) {
   const { isDarkMode, toggleDarkMode, setDarkMode } = useDarkMode();
 
   return (
     <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode, setDarkMode }}>
       {children}
     </ThemeContext.Provider>
+  );
+}
+
+// Main app providers wrapper
+type AppProvidersProps = PropsWithChildren<{}>;
+
+export function AppProviders({ children }: AppProvidersProps) {
+  const sidebarContext = useSidebarProvider();
+  const authContext = useAuthProvider();
+
+  return (
+    <ThemeProvider>
+      <AuthContext.Provider value={authContext}>
+        <SidebarContext.Provider value={sidebarContext}>
+          {children}
+        </SidebarContext.Provider>
+      </AuthContext.Provider>
+    </ThemeProvider>
   );
 }
