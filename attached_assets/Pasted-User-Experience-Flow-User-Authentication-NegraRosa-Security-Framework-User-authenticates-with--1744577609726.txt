@@ -1,0 +1,97 @@
+User Experience Flow
+User Authentication (NegraRosa Security Framework)
+
+User authenticates with inclusive verification options
+Deaf-friendly verification paths available
+Multiple authentication methods supported (biometric, NFT, etc.)
+Trust Building (FibonRoseTRUST)
+
+Calculates progressive trust scores using Fibonacci sequence
+Adapts trust requirements based on user accessibility needs
+Provides transparent visualization of trust progression
+Risk Assessment (NegraRosa Security Framework)
+
+Uses trust score from FibonRoseTRUST
+Applies inclusive risk assessment that considers diverse circumstances
+Focuses on restrictions rather than binary allow/deny decisions
+Business Verification (Both Products)
+
+Entrepreneur-specific verification paths in NegraRosa Security
+Progressive trust building for businesses in FibonRoseTRUST
+WHY explanations allowed alongside verification data
+Dashboard Experience (Shared UI)
+
+Unified dashboard showing security status and trust progression
+Transparency about what companies can see
+Accessibility controls throughout the experience
+This architecture properly reflects both products while maintaining their distinct purposes and seamless integration. The NegraRosa Security Framework handles the inclusive security verification while FibonRoseTRUST manages the progressive trust building system.
+
+do we have some kind of internal messaging where users receive notification of opportunity to get WHY then they write down, upload then show if that probelm was resolved, upload , share contact info of person who faciliated stuff, then submit back to who?
+
+11 minutes ago
+
+pinkycollie
+i tnocied sms, quick text, quick scan, quci take picture or screenshot will be fine
+
+10 minutes ago
+
+pinkycollie
+Based on your question, it sounds like we need to develop a WHY feature for the system - an internal messaging and document submission system that allows users to explain their circumstances when traditional verification fails.
+
+Let me outline how this WHY system could work:
+
+WHY System: Explanation & Resolution Flow
+System Components
+WHY Notification Service
+
+Detects when a user encounters a verification barrier
+Sends notification to user about the opportunity to explain their situation
+Offers multiple accessibility options for submitting explanations
+WHY Submission Portal
+
+User interface for submitting explanations
+Support for text, audio, video, and sign language
+Document upload functionality for supporting evidence
+Form fields for resolution contact information
+WHY Processing System
+
+Routes explanations to appropriate reviewers
+Tracks status of submissions
+Maintains audit trail of explanations and resolutions
+Resolution Tracking
+
+Interface for users to update when issues are resolved
+Upload functionality for resolution documentation
+Ability to share contact information of facilitators who helped
+User Flow
+Trigger Event
+
+User fails a standard verification check
+System identifies opportunity for WHY submission
+Notification sent to user
+Explanation Submission
+
+User receives notification with link to WHY portal
+User explains circumstances in preferred format
+Supporting documents are attached
+Submission is recorded with timestamp
+Review Process
+
+WHY submission routed to appropriate reviewer
+Initial assessment performed
+Potential follow-up questions sent to user
+Resolution Path
+
+User works to resolve the issue with guidance
+External facilitators may assist (social workers, community advocates, etc.)
+Progress tracked in the system
+Resolution Documentation
+
+User uploads proof of resolution
+Facilitator contact information recorded (with permission)
+System verifies the documentation
+Trust Adjustment
+
+FibonRoseTRUST system updates trust score based on resolution
+NegraRosa Security Framework adapts verification requirements
+User gains appropriate access level

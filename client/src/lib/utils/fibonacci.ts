@@ -1,75 +1,120 @@
 /**
- * Calculate the Fibonacci number at a given position
- * @param n Position in the Fibonacci sequence (1-indexed)
- * @returns The Fibonacci number at position n
+ * Fibonacci-based trust scoring utilities
+ * This implements a non-linear growth model for trust scores based on the Fibonacci sequence
  */
-export function fibonacci(n: number): number {
-  if (n <= 0) return 0;
-  if (n === 1) return 1;
-  if (n === 2) return 1;
+
+// Generate Fibonacci sequence up to a maximum value
+export function generateFibonacciSequence(maxValue: number): number[] {
+  const sequence: number[] = [1, 1];
+  let next = 2;
   
-  let a = 1;
-  let b = 1;
-  let temp;
-  
-  for (let i = 3; i <= n; i++) {
-    temp = a + b;
-    a = b;
-    b = temp;
+  while (next <= maxValue) {
+    sequence.push(next);
+    next = sequence[sequence.length - 1] + sequence[sequence.length - 2];
   }
   
-  return b;
+  return sequence;
 }
 
-/**
- * Calculate which Fibonacci level a verification count corresponds to
- * @param verificationCount Number of completed verifications
- * @returns The Fibonacci level (position in sequence)
- */
-export function calculateFibonacciLevel(verificationCount: number): number {
-  if (verificationCount <= 0) return 0;
+// Get the Fibonacci level based on a user's trust score
+export function getTrustLevel(score: number): number {
+  const fibonacci = generateFibonacciSequence(1000); // Large enough for our levels
+  let level = 0;
   
-  // Find the highest Fibonacci level where fibonacci(level) <= verificationCount
-  let level = 1;
-  while (fibonacci(level + 1) <= verificationCount) {
-    level++;
+  for (let i = 0; i < fibonacci.length; i++) {
+    if (score >= fibonacci[i]) {
+      level = i + 1;
+    } else {
+      break;
+    }
   }
   
   return level;
 }
 
-/**
- * Calculate the trust score based on verification count
- * @param verificationCount Number of completed verifications
- * @returns The trust score
- */
-export function calculateFibonacciScore(verificationCount: number): number {
-  if (verificationCount <= 0) return 0;
+// Calculate points needed for next level
+export function getPointsForNextLevel(currentScore: number): number {
+  const fibonacci = generateFibonacciSequence(1000);
+  let nextThreshold = 0;
   
-  // The score is the Fibonacci number at the current level
-  const level = calculateFibonacciLevel(verificationCount);
-  return fibonacci(level);
+  for (let i = 0; i < fibonacci.length; i++) {
+    if (fibonacci[i] > currentScore) {
+      nextThreshold = fibonacci[i];
+      break;
+    }
+  }
+  
+  return nextThreshold > 0 ? nextThreshold - currentScore : 0;
 }
 
-/**
- * Calculate the next Fibonacci score threshold
- * @param currentLevel Current Fibonacci level
- * @returns The next Fibonacci number in the sequence
- */
-export function getNextScoreThreshold(currentLevel: number): number {
-  return fibonacci(currentLevel + 1);
+// Calculate progress percentage to next level
+export function getProgressToNextLevel(currentScore: number): number {
+  const fibonacci = generateFibonacciSequence(1000);
+  let currentThreshold = 0;
+  let nextThreshold = 0;
+  
+  // Find the current and next thresholds
+  for (let i = 0; i < fibonacci.length; i++) {
+    if (fibonacci[i] > currentScore) {
+      currentThreshold = i > 0 ? fibonacci[i - 1] : 0;
+      nextThreshold = fibonacci[i];
+      break;
+    }
+  }
+  
+  // If we're at the max level
+  if (nextThreshold === 0) return 100;
+  
+  // Calculate progress percentage
+  const rangeSize = nextThreshold - currentThreshold;
+  const progressInRange = currentScore - currentThreshold;
+  
+  return Math.floor((progressInRange / rangeSize) * 100);
 }
 
-/**
- * Calculate how many more verifications needed to reach next level
- * @param verificationCount Current number of verifications
- * @returns Number of additional verifications needed
- */
-export function verificationsToNextLevel(verificationCount: number): number {
-  if (verificationCount <= 0) return 1;
+// Get visual description for trust level
+export function getTrustLevelDescription(level: number): string {
+  const descriptions: Record<number, string> = {
+    1: 'Sprout',
+    2: 'Seedling',
+    3: 'Sapling',
+    4: 'Young Tree',
+    5: 'Mature Tree',
+    6: 'Ancient Tree',
+    7: 'Forest Guardian',
+    8: 'Forest Elder',
+    9: 'Divine Forest',
+    10: 'Eternal Forest',
+  };
   
-  const currentLevel = calculateFibonacciLevel(verificationCount);
-  const nextThreshold = fibonacci(currentLevel + 1);
+  return descriptions[level] || 'Unknown';
+}
+
+// Calculate trust score from verification data
+export function calculateTrustScore(
+  verificationCount: number,
+  positiveTransactions: number,
+  totalTransactions: number,
+  age: number // Account age in days
+): number {
+  // Base score from verifications (each verification has exponentially increasing value)
+  const verificationScore = verificationCount > 0 
+    ? Math.pow(verificationCount, 1.5) 
+    : 0;
   
-  return nextThreshold - verificationCount;
+  // Transaction reputation (0-1 scale)
+  const transactionRatio = totalTransactions > 0 
+    ? positiveTransactions / totalTransactions 
+    : 0;
+  
+  // Account age factor (logarithmic growth, caps at ~2 for 1 year old accounts)
+  const ageFactor = age > 0 
+    ? 1 + (Math.log10(age) / 2) 
+    : 1;
+  
+  // Combined score with weighting
+  const score = (verificationScore * 0.6 + transactionRatio * 5 * 0.4) * ageFactor;
+  
+  // Round to nearest integer
+  return Math.round(score);
 }
