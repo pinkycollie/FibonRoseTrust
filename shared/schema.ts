@@ -49,6 +49,45 @@ export const dataPermissions = pgTable("data_permissions", {
   enabled: boolean("enabled").notNull().default(true),
 });
 
+// Webhook definitions
+export const webhookSubscriptions = pgTable("webhook_subscriptions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  secret: text("secret").notNull(),
+  events: text("events").array().notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  partnerId: integer("partner_id"),
+  headers: jsonb("headers").default({})
+});
+
+export const webhookDeliveries = pgTable("webhook_deliveries", {
+  id: serial("id").primaryKey(), 
+  subscriptionId: integer("subscription_id").notNull().references(() => webhookSubscriptions.id),
+  eventType: text("event_type").notNull(),
+  payload: jsonb("payload").notNull(),
+  status: text("status").notNull(), // 'success', 'failed', 'pending'
+  statusCode: integer("status_code"),
+  response: text("response"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  processedAt: timestamp("processed_at"),
+  attempts: integer("attempts").notNull().default(0)
+});
+
+// Notion integration table
+export const notionIntegrations = pgTable("notion_integrations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  accessToken: text("access_token").notNull(),
+  workspaceId: text("workspace_id").notNull(),
+  databaseId: text("database_id"),
+  isActive: boolean("is_active").notNull().default(true),
+  lastSynced: timestamp("last_synced"),
+  settings: jsonb("settings").default({})
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -63,6 +102,21 @@ export const insertVerificationSchema = createInsertSchema(verifications).omit({
 export const insertTrustScoreSchema = createInsertSchema(trustScores).omit({ lastUpdated: true });
 export const insertDataPermissionSchema = createInsertSchema(dataPermissions);
 
+// Webhook schemas
+export const insertWebhookSubscriptionSchema = createInsertSchema(webhookSubscriptions).omit({ 
+  createdAt: true 
+});
+
+export const insertWebhookDeliverySchema = createInsertSchema(webhookDeliveries).omit({ 
+  createdAt: true, 
+  processedAt: true, 
+  attempts: true 
+});
+
+export const insertNotionIntegrationSchema = createInsertSchema(notionIntegrations).omit({
+  lastSynced: true
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -74,3 +128,26 @@ export type TrustScore = typeof trustScores.$inferSelect;
 export type InsertTrustScore = z.infer<typeof insertTrustScoreSchema>;
 export type DataPermission = typeof dataPermissions.$inferSelect;
 export type InsertDataPermission = z.infer<typeof insertDataPermissionSchema>;
+
+// Webhook types
+export type WebhookSubscription = typeof webhookSubscriptions.$inferSelect;
+export type InsertWebhookSubscription = z.infer<typeof insertWebhookSubscriptionSchema>;
+export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
+export type InsertWebhookDelivery = z.infer<typeof insertWebhookDeliverySchema>;
+export type NotionIntegration = typeof notionIntegrations.$inferSelect;
+export type InsertNotionIntegration = z.infer<typeof insertNotionIntegrationSchema>;
+
+// Event types for webhook system
+export const EventTypes = {
+  VERIFICATION_CREATED: 'verification.created',
+  VERIFICATION_UPDATED: 'verification.updated',
+  VERIFICATION_VERIFIED: 'verification.verified',
+  VERIFICATION_REJECTED: 'verification.rejected',
+  TRUST_SCORE_UPDATED: 'trust_score.updated',
+  USER_CREATED: 'user.created',
+  USER_UPDATED: 'user.updated',
+  NFT_MINTED: 'nft.minted',
+  NFT_TRANSFERRED: 'nft.transferred'
+} as const;
+
+export type EventType = typeof EventTypes[keyof typeof EventTypes];

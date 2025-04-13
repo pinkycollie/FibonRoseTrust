@@ -3,7 +3,10 @@ import {
   verificationTypes, type VerificationType, type InsertVerificationType,
   verifications, type Verification, type InsertVerification,
   trustScores, type TrustScore, type InsertTrustScore,
-  dataPermissions, type DataPermission, type InsertDataPermission
+  dataPermissions, type DataPermission, type InsertDataPermission,
+  webhookSubscriptions, type WebhookSubscription, type InsertWebhookSubscription,
+  webhookDeliveries, type WebhookDelivery, type InsertWebhookDelivery,
+  notionIntegrations, type NotionIntegration, type InsertNotionIntegration
 } from "@shared/schema";
 
 // Simple Fibonacci functions for server-side trust score calculation
@@ -58,6 +61,26 @@ export interface IStorage {
   createDataPermission(permission: InsertDataPermission): Promise<DataPermission>;
   updateDataPermission(id: number, enabled: boolean): Promise<DataPermission | undefined>;
   
+  // Webhook methods
+  getWebhookSubscriptions(): Promise<WebhookSubscription[]>;
+  getWebhookSubscription(id: number): Promise<WebhookSubscription | undefined>;
+  createWebhookSubscription(subscription: InsertWebhookSubscription): Promise<WebhookSubscription>;
+  updateWebhookSubscription(id: number, updates: Partial<WebhookSubscription>): Promise<WebhookSubscription | undefined>;
+  deleteWebhookSubscription(id: number): Promise<boolean>;
+  
+  // Webhook delivery methods
+  getWebhookDeliveries(subscriptionId?: number): Promise<WebhookDelivery[]>;
+  getWebhookDelivery(id: number): Promise<WebhookDelivery | undefined>;
+  createWebhookDelivery(delivery: InsertWebhookDelivery): Promise<WebhookDelivery>;
+  updateWebhookDeliveryStatus(id: number, status: string, statusCode?: number, response?: string, errorMessage?: string): Promise<WebhookDelivery | undefined>;
+  
+  // Notion integration methods
+  getNotionIntegrations(userId: number): Promise<NotionIntegration[]>;
+  getNotionIntegration(id: number): Promise<NotionIntegration | undefined>;
+  createNotionIntegration(integration: InsertNotionIntegration): Promise<NotionIntegration>;
+  updateNotionIntegration(id: number, updates: Partial<NotionIntegration>): Promise<NotionIntegration | undefined>;
+  deleteNotionIntegration(id: number): Promise<boolean>;
+  
   // Initialization methods
   seedInitialData(): Promise<void>;
 }
@@ -68,12 +91,18 @@ export class MemStorage implements IStorage {
   private verifications: Map<number, Verification>;
   private trustScores: Map<number, TrustScore>;
   private dataPermissions: Map<number, DataPermission>;
+  private webhookSubscriptions: Map<number, WebhookSubscription>;
+  private webhookDeliveries: Map<number, WebhookDelivery>;
+  private notionIntegrations: Map<number, NotionIntegration>;
   
   private userId: number;
   private verificationTypeId: number;
   private verificationId: number;
   private trustScoreId: number;
   private dataPermissionId: number;
+  private webhookSubscriptionId: number;
+  private webhookDeliveryId: number;
+  private notionIntegrationId: number;
 
   constructor() {
     this.users = new Map();
@@ -81,12 +110,18 @@ export class MemStorage implements IStorage {
     this.verifications = new Map();
     this.trustScores = new Map();
     this.dataPermissions = new Map();
+    this.webhookSubscriptions = new Map();
+    this.webhookDeliveries = new Map();
+    this.notionIntegrations = new Map();
     
     this.userId = 1;
     this.verificationTypeId = 1;
     this.verificationId = 1;
     this.trustScoreId = 1;
     this.dataPermissionId = 1;
+    this.webhookSubscriptionId = 1;
+    this.webhookDeliveryId = 1;
+    this.notionIntegrationId = 1;
   }
 
   // User methods
@@ -347,8 +382,158 @@ export class MemStorage implements IStorage {
       enabled: false
     });
     
+    // Create sample webhook subscription
+    await this.createWebhookSubscription({
+      name: 'Verification Status Updates',
+      url: 'https://example.com/webhooks/fibontrust',
+      secret: 'whsec_' + Math.random().toString(36).substring(2, 15),
+      events: ['verification.verified', 'verification.rejected'],
+      isActive: true,
+      partnerId: 1,
+      headers: { 'X-Custom-Header': 'FibonRoseTrust' }
+    });
+    
+    // Create sample Notion integration
+    await this.createNotionIntegration({
+      userId: defaultUser.id,
+      accessToken: 'secret_notionToken123456',
+      workspaceId: 'workspace123',
+      databaseId: 'database456',
+      isActive: true,
+      settings: {
+        syncVerifications: true,
+        syncTrustScores: true
+      }
+    });
+    
     // Calculate initial trust score
     await this.updateTrustScore(defaultUser.id);
+  }
+  
+  // Webhook subscription methods
+  async getWebhookSubscriptions(): Promise<WebhookSubscription[]> {
+    return Array.from(this.webhookSubscriptions.values());
+  }
+  
+  async getWebhookSubscription(id: number): Promise<WebhookSubscription | undefined> {
+    return this.webhookSubscriptions.get(id);
+  }
+  
+  async createWebhookSubscription(subscription: InsertWebhookSubscription): Promise<WebhookSubscription> {
+    const id = this.webhookSubscriptionId++;
+    const createdAt = new Date();
+    const newSubscription: WebhookSubscription = { 
+      ...subscription, 
+      id,
+      createdAt
+    };
+    
+    this.webhookSubscriptions.set(id, newSubscription);
+    return newSubscription;
+  }
+  
+  async updateWebhookSubscription(id: number, updates: Partial<WebhookSubscription>): Promise<WebhookSubscription | undefined> {
+    const subscription = this.webhookSubscriptions.get(id);
+    if (!subscription) return undefined;
+    
+    const updatedSubscription: WebhookSubscription = {
+      ...subscription,
+      ...updates,
+    };
+    
+    this.webhookSubscriptions.set(id, updatedSubscription);
+    return updatedSubscription;
+  }
+  
+  async deleteWebhookSubscription(id: number): Promise<boolean> {
+    return this.webhookSubscriptions.delete(id);
+  }
+  
+  // Webhook delivery methods
+  async getWebhookDeliveries(subscriptionId?: number): Promise<WebhookDelivery[]> {
+    if (subscriptionId) {
+      return Array.from(this.webhookDeliveries.values()).filter(
+        (delivery) => delivery.subscriptionId === subscriptionId
+      );
+    }
+    return Array.from(this.webhookDeliveries.values());
+  }
+  
+  async getWebhookDelivery(id: number): Promise<WebhookDelivery | undefined> {
+    return this.webhookDeliveries.get(id);
+  }
+  
+  async createWebhookDelivery(delivery: InsertWebhookDelivery): Promise<WebhookDelivery> {
+    const id = this.webhookDeliveryId++;
+    const createdAt = new Date();
+    const newDelivery: WebhookDelivery = { 
+      ...delivery, 
+      id,
+      createdAt,
+      attempts: 0
+    };
+    
+    this.webhookDeliveries.set(id, newDelivery);
+    return newDelivery;
+  }
+  
+  async updateWebhookDeliveryStatus(
+    id: number, 
+    status: string, 
+    statusCode?: number, 
+    response?: string, 
+    errorMessage?: string
+  ): Promise<WebhookDelivery | undefined> {
+    const delivery = this.webhookDeliveries.get(id);
+    if (!delivery) return undefined;
+    
+    const updatedDelivery: WebhookDelivery = {
+      ...delivery,
+      status,
+      statusCode: statusCode || delivery.statusCode,
+      response: response || delivery.response,
+      errorMessage: errorMessage || delivery.errorMessage,
+      processedAt: new Date(),
+      attempts: delivery.attempts + 1
+    };
+    
+    this.webhookDeliveries.set(id, updatedDelivery);
+    return updatedDelivery;
+  }
+  
+  // Notion integration methods
+  async getNotionIntegrations(userId: number): Promise<NotionIntegration[]> {
+    return Array.from(this.notionIntegrations.values()).filter(
+      (integration) => integration.userId === userId
+    );
+  }
+  
+  async getNotionIntegration(id: number): Promise<NotionIntegration | undefined> {
+    return this.notionIntegrations.get(id);
+  }
+  
+  async createNotionIntegration(integration: InsertNotionIntegration): Promise<NotionIntegration> {
+    const id = this.notionIntegrationId++;
+    const newIntegration: NotionIntegration = { ...integration, id, lastSynced: null };
+    this.notionIntegrations.set(id, newIntegration);
+    return newIntegration;
+  }
+  
+  async updateNotionIntegration(id: number, updates: Partial<NotionIntegration>): Promise<NotionIntegration | undefined> {
+    const integration = this.notionIntegrations.get(id);
+    if (!integration) return undefined;
+    
+    const updatedIntegration: NotionIntegration = {
+      ...integration,
+      ...updates,
+    };
+    
+    this.notionIntegrations.set(id, updatedIntegration);
+    return updatedIntegration;
+  }
+  
+  async deleteNotionIntegration(id: number): Promise<boolean> {
+    return this.notionIntegrations.delete(id);
   }
 }
 
