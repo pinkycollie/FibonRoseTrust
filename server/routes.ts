@@ -8,6 +8,7 @@ import {
   insertDataPermissionSchema,
   insertWebhookSubscriptionSchema,
   insertNotionIntegrationSchema,
+  insertXanoIntegrationSchema,
   EventTypes
 } from "@shared/schema";
 import multer from 'multer';

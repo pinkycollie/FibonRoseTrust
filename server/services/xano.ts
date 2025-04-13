@@ -25,6 +25,7 @@ export class XanoService {
     apiKey?: string;
     baseUrl?: string;
     webhookSecret?: string;
+    aiEnabled?: boolean;
   }): void {
     this.apiKey = config.apiKey || null;
     this.baseUrl = config.baseUrl || null;
@@ -36,6 +37,14 @@ export class XanoService {
         validateSignature: this.validateXanoSignature.bind(this),
         normalize: this.normalizeXanoData.bind(this)
       });
+      
+      // Also register the integration
+      UniversalWebhookManager.registerXanoIntegration(
+        this.apiKey || '',
+        this.baseUrl || '',
+        this.webhookSecret,
+        config.aiEnabled || false
+      );
     }
 
     log('Xano service initialized', 'xano');

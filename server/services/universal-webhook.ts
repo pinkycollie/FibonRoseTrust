@@ -30,6 +30,12 @@ export class UniversalWebhookManager {
   // External service configurations
   private static externalServices: Record<string, any> = {};
   
+  // Custom source handlers for validating and normalizing webhooks
+  private static customSourceHandlers: Record<string, {
+    validateSignature: (payload: any, headers: Record<string, string>) => boolean;
+    normalize: (data: any) => Record<string, any>;
+  }> = {};
+  
   /**
    * Initialize the webhook manager
    */
@@ -174,6 +180,22 @@ export class UniversalWebhookManager {
   }
   
   /**
+   * Register a custom source handler for webhook validation and normalization
+   * @param source Source identifier (e.g., 'xano', 'notion')
+   * @param handler Handler with validation and normalization functions
+   */
+  public static registerCustomSourceHandler(
+    source: string,
+    handler: {
+      validateSignature: (payload: any, headers: Record<string, string>) => boolean;
+      normalize: (data: any) => Record<string, any>;
+    }
+  ): void {
+    this.customSourceHandlers[source] = handler;
+    log(`Registered custom webhook handler for source: ${source}`, 'webhook');
+  }
+  
+  /**
    * Process an incoming webhook from an external source
    * @param source Source of the webhook
    * @param headers HTTP headers
@@ -187,6 +209,15 @@ export class UniversalWebhookManager {
   ): Promise<any> {
     try {
       log(`Processing incoming webhook from ${source}`, 'webhook');
+      
+      // Validate webhook signature if we have a custom handler
+      if (this.customSourceHandlers[source]) {
+        const isValid = this.customSourceHandlers[source].validateSignature(body, headers);
+        if (!isValid) {
+          throw new Error(`Invalid signature for webhook from ${source}`);
+        }
+        log(`Validated signature for webhook from ${source}`, 'webhook');
+      }
       
       // Normalize the webhook data based on source
       const normalizedData = await this.normalizeWebhookData(source, body);
@@ -236,7 +267,12 @@ export class UniversalWebhookManager {
     source: string,
     data: any
   ): Promise<Record<string, any>> {
-    // Implementation would vary based on source
+    // Check if we have a custom handler for this source
+    if (this.customSourceHandlers[source]) {
+      return this.customSourceHandlers[source].normalize(data);
+    }
+    
+    // Default handlers for builtin sources
     switch (source) {
       case 'notion':
         return this.normalizeNotionWebhook(data);
@@ -567,6 +603,29 @@ export class UniversalWebhookManager {
     };
     
     log(`Registered PinkSync integration for project ${projectId}`, 'webhook');
+  }
+  
+  /**
+   * Register a Xano AI integration
+   * @param apiKey Xano API key
+   * @param baseUrl Xano API base URL
+   * @param webhookSecret Secret for validating Xano webhooks
+   * @param aiEnabled Whether to enable AI features
+   */
+  public static registerXanoIntegration(
+    apiKey: string,
+    baseUrl: string,
+    webhookSecret?: string,
+    aiEnabled: boolean = false
+  ): void {
+    this.externalServices.xano = {
+      apiKey,
+      baseUrl,
+      webhookSecret,
+      aiEnabled
+    };
+    
+    log(`Registered Xano integration with base URL ${baseUrl}`, 'webhook');
   }
   
   /**
