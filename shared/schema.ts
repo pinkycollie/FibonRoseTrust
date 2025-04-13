@@ -88,6 +88,19 @@ export const notionIntegrations = pgTable("notion_integrations", {
   settings: jsonb("settings").default({})
 });
 
+// Xano integration table
+export const xanoIntegrations = pgTable("xano_integrations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  apiKey: text("api_key").notNull(),
+  baseUrl: text("base_url").notNull(),
+  webhookSecret: text("webhook_secret"),
+  isActive: boolean("is_active").notNull().default(true),
+  lastSynced: timestamp("last_synced"),
+  aiEnabled: boolean("ai_enabled").notNull().default(false),
+  settings: jsonb("settings").default({})
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -117,6 +130,10 @@ export const insertNotionIntegrationSchema = createInsertSchema(notionIntegratio
   lastSynced: true
 });
 
+export const insertXanoIntegrationSchema = createInsertSchema(xanoIntegrations).omit({
+  lastSynced: true
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -136,18 +153,30 @@ export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
 export type InsertWebhookDelivery = z.infer<typeof insertWebhookDeliverySchema>;
 export type NotionIntegration = typeof notionIntegrations.$inferSelect;
 export type InsertNotionIntegration = z.infer<typeof insertNotionIntegrationSchema>;
+export type XanoIntegration = typeof xanoIntegrations.$inferSelect;
+export type InsertXanoIntegration = z.infer<typeof insertXanoIntegrationSchema>;
 
 // Event types for webhook system
 export const EventTypes = {
+  // Verification events
   VERIFICATION_CREATED: 'verification.created',
   VERIFICATION_UPDATED: 'verification.updated',
   VERIFICATION_VERIFIED: 'verification.verified',
   VERIFICATION_REJECTED: 'verification.rejected',
+  
+  // User events
   TRUST_SCORE_UPDATED: 'trust_score.updated',
   USER_CREATED: 'user.created',
   USER_UPDATED: 'user.updated',
+  
+  // NFT events
   NFT_MINTED: 'nft.minted',
-  NFT_TRANSFERRED: 'nft.transferred'
+  NFT_TRANSFERRED: 'nft.transferred',
+  
+  // Xano integration events
+  XANO_ANALYSIS_COMPLETED: 'xano.analysis.completed',
+  XANO_DATA_SYNCED: 'xano.data.synced',
+  XANO_AI_INSIGHT: 'xano.ai.insight'
 } as const;
 
 export type EventType = typeof EventTypes[keyof typeof EventTypes];
