@@ -1,12 +1,11 @@
-import type { Express, Request, Response } from "express";
-import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { Request, Response, Express } from 'express';
+import { Server, createServer } from 'http';
+import { storage } from './storage';
 import { 
   insertUserSchema, 
   insertVerificationSchema, 
   insertVerificationTypeSchema,
   insertDataPermissionSchema,
-  insertWebhookSubscriptionSchema,
   insertNotionIntegrationSchema,
   insertXanoIntegrationSchema,
   EventTypes
@@ -14,10 +13,6 @@ import {
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { WebhookService } from './services/webhook';
-import { UniversalWebhookManager } from './services/universal-webhook';
-import PinkSyncService from './services/pinksync';
-import XanoService from './services/xano';
 import crypto from 'crypto';
 
 // Configure multer for file uploads
@@ -236,94 +231,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: { walletAddress, tokenId }
       });
       
-      // Trigger webhook for NFT minting event
-      try {
-        await WebhookService.deliverToSubscriptions(EventTypes.NFT_MINTED, {
-          userId,
-          walletAddress,
-          tokenId,
-          verificationId: verification.id
-        });
-      } catch (webhookError) {
-        console.error('Failed to deliver webhook:', webhookError);
-      }
-      
       res.status(201).json(verification);
     } catch (error) {
       res.status(400).json({ message: 'Invalid verification data', error });
     }
-  });
-
-  // Webhook subscription routes
-  app.get('/api/webhooks', async (_req: Request, res: Response) => {
-    const subscriptions = await storage.getWebhookSubscriptions();
-    res.json(subscriptions);
-  });
-  
-  app.get('/api/webhook/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
-    const subscription = await storage.getWebhookSubscription(id);
-    
-    if (!subscription) {
-      return res.status(404).json({ message: 'Webhook subscription not found' });
-    }
-    
-    res.json(subscription);
-  });
-  
-  app.post('/api/webhook', async (req: Request, res: Response) => {
-    try {
-      const data = insertWebhookSubscriptionSchema.parse(req.body);
-      const subscription = await storage.createWebhookSubscription(data);
-      res.status(201).json(subscription);
-    } catch (error) {
-      res.status(400).json({ message: 'Invalid webhook subscription data', error });
-    }
-  });
-  
-  app.patch('/api/webhook/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
-    const subscription = await storage.getWebhookSubscription(id);
-    
-    if (!subscription) {
-      return res.status(404).json({ message: 'Webhook subscription not found' });
-    }
-    
-    try {
-      const updated = await storage.updateWebhookSubscription(id, req.body);
-      res.json(updated);
-    } catch (error) {
-      res.status(400).json({ message: 'Failed to update webhook subscription', error });
-    }
-  });
-  
-  app.delete('/api/webhook/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
-    const success = await storage.deleteWebhookSubscription(id);
-    
-    if (!success) {
-      return res.status(404).json({ message: 'Webhook subscription not found' });
-    }
-    
-    res.json({ success: true });
-  });
-  
-  // Webhook deliveries routes
-  app.get('/api/webhook-deliveries', async (req: Request, res: Response) => {
-    const subscriptionId = req.query.subscriptionId ? parseInt(req.query.subscriptionId as string) : undefined;
-    const deliveries = await storage.getWebhookDeliveries(subscriptionId);
-    res.json(deliveries);
-  });
-  
-  app.get('/api/webhook-delivery/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
-    const delivery = await storage.getWebhookDelivery(id);
-    
-    if (!delivery) {
-      return res.status(404).json({ message: 'Webhook delivery not found' });
-    }
-    
-    res.json(delivery);
   });
   
   // Notion integration routes
@@ -369,220 +280,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     res.json({ success: true });
   });
-  
-  // Universal webhook system endpoints
-  app.post('/api/universal-webhook/:source', async (req: Request, res: Response) => {
-    const source = req.params.source;
-    
-    if (!source) {
-      return res.status(400).json({ message: 'Source parameter is required' });
-    }
-    
-    try {
-      const result = await UniversalWebhookManager.processIncomingWebhook(
-        source,
-        req.headers as Record<string, string>,
-        req.body
-      );
-      
-      if (!result.success) {
-        return res.status(400).json({ message: result.error });
-      }
-      
-      res.json(result.data);
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to process webhook', error });
-    }
-  });
-  
-  // CSV import/export routes
-  app.post('/api/import/webhooks', upload.single('file'), async (req: Request, res: Response) => {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-    
-    try {
-      const count = await UniversalWebhookManager.importSubscriptionsFromCsv(req.file.path);
-      
-      // Clean up uploaded file
-      fs.unlinkSync(req.file.path);
-      
-      res.json({ success: true, count });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to import webhooks', error });
-    }
-  });
-  
-  app.get('/api/export/webhooks', async (req: Request, res: Response) => {
-    try {
-      const filter = req.query.filter ? JSON.parse(req.query.filter as string) : undefined;
-      const filepath = await UniversalWebhookManager.exportWebhookDataToCsv(filter);
-      
-      res.download(filepath, path.basename(filepath), (err) => {
-        if (err) {
-          console.error('Error downloading file:', err);
-        } else {
-          // Clean up file after download
-          setTimeout(() => {
-            try {
-              if (fs.existsSync(filepath)) {
-                fs.unlinkSync(filepath);
-              }
-            } catch (cleanupError) {
-              console.error('Error cleaning up file:', cleanupError);
-            }
-          }, 1000);
-        }
-      });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to export webhooks', error });
-    }
-  });
-  
-  // Test webhook endpoint
-  app.post('/api/test-webhook/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
-    const subscription = await storage.getWebhookSubscription(id);
-    
-    if (!subscription) {
-      return res.status(404).json({ message: 'Webhook subscription not found' });
-    }
-    
-    try {
-      const eventType = req.body.eventType || subscription.events[0] || EventTypes.VERIFICATION_CREATED;
-      const payload = req.body.payload || { test: true, timestamp: new Date().toISOString() };
-      
-      // Deliver webhook
-      const delivery = await WebhookService.deliverToSubscriptions(eventType, payload);
-      
-      res.json({ success: true, message: 'Webhook test sent successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to test webhook', error });
-    }
-  });
-  
-  // Xano integration routes
-  app.get('/api/user/:userId/xano-integrations', async (req: Request, res: Response) => {
-    const userId = parseInt(req.params.userId);
-    const integrations = await storage.getXanoIntegrations(userId);
-    res.json(integrations);
-  });
-  
-  app.post('/api/xano-integration', async (req: Request, res: Response) => {
-    try {
-      const data = insertXanoIntegrationSchema.parse(req.body);
-      const integration = await storage.createXanoIntegration(data);
-      
-      // Initialize the Xano service with this integration
-      const { apiKey, baseUrl, webhookSecret, aiEnabled } = integration;
-      
-      // Import XanoService dynamically to avoid circular dependencies
-      const { XanoService } = await import('./services/xano');
-      XanoService.initialize({
-        apiKey,
-        baseUrl,
-        webhookSecret: webhookSecret || undefined,
-        aiEnabled
-      });
-      
-      res.status(201).json(integration);
-    } catch (error) {
-      res.status(400).json({ message: 'Invalid Xano integration data', error });
-    }
-  });
-  
-  app.patch('/api/xano-integration/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
-    const integration = await storage.getXanoIntegration(id);
-    
-    if (!integration) {
-      return res.status(404).json({ message: 'Xano integration not found' });
-    }
-    
-    try {
-      const updated = await storage.updateXanoIntegration(id, req.body);
-      
-      // Re-initialize the Xano service with the updated integration
-      const { apiKey, baseUrl, webhookSecret, aiEnabled } = updated;
-      
-      // Import XanoService dynamically to avoid circular dependencies
-      const { XanoService } = await import('./services/xano');
-      XanoService.initialize({
-        apiKey,
-        baseUrl,
-        webhookSecret: webhookSecret || undefined,
-        aiEnabled
-      });
-      
-      res.json(updated);
-    } catch (error) {
-      res.status(400).json({ message: 'Failed to update Xano integration', error });
-    }
-  });
-  
-  app.delete('/api/xano-integration/:id', async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
-    const success = await storage.deleteXanoIntegration(id);
-    
-    if (!success) {
-      return res.status(404).json({ message: 'Xano integration not found' });
-    }
-    
-    res.json({ success: true });
-  });
-  
-  // Xano AI analysis endpoint
-  app.post('/api/xano/analyze', async (req: Request, res: Response) => {
-    const { text, options } = req.body;
-    
-    if (!text) {
-      return res.status(400).json({ message: 'Text is required for analysis' });
-    }
-    
-    try {
-      // Import XanoService dynamically
-      const { XanoService } = await import('./services/xano');
-      
-      // Check if Xano is configured
-      const info = XanoService.getInstanceInfo();
-      if (!info.isConfigured) {
-        return res.status(400).json({ 
-          message: 'Xano is not configured. Please set up a Xano integration first.',
-          configured: false
-        });
-      }
-      
-      // Run the analysis
-      const result = await XanoService.analyzeWithAI(text, options);
-      
-      // Trigger webhook for analysis completion
-      try {
-        await WebhookService.deliverToSubscriptions(
-          EventTypes.XANO_ANALYSIS_COMPLETED, 
-          {
-            text,
-            result,
-            timestamp: new Date().toISOString()
-          }
-        );
-      } catch (webhookError) {
-        console.error('Failed to deliver analysis webhook:', webhookError);
-      }
-      
-      res.json({ success: true, result });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to analyze with Xano AI', error });
-    }
-  });
 
   // Create upload directory if it doesn't exist
   if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads');
   }
-
-  // Initialize universal webhook manager
-  await UniversalWebhookManager.initialize();
-
+  
   const httpServer = createServer(app);
   return httpServer;
 }
