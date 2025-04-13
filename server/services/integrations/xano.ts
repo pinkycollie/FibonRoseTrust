@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { log } from '../../vite';
-import { EventType } from '@shared/schema';
+import { EventType, EventTypes } from '@shared/schema';
 
 /**
  * Integration with Xano API and webhooks

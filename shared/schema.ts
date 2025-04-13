@@ -158,6 +158,9 @@ export type InsertXanoIntegration = z.infer<typeof insertXanoIntegrationSchema>;
 
 // Event types for webhook system
 export const EventTypes = {
+  // Generic event
+  GENERIC: 'generic.event',
+  
   // Verification events
   VERIFICATION_CREATED: 'verification.created',
   VERIFICATION_UPDATED: 'verification.updated',
