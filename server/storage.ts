@@ -5,7 +5,30 @@ import {
   trustScores, type TrustScore, type InsertTrustScore,
   dataPermissions, type DataPermission, type InsertDataPermission
 } from "@shared/schema";
-import { calculateFibonacciLevel, calculateFibonacciScore } from "../client/src/lib/utils/fibonacci";
+
+// Simple Fibonacci functions for server-side trust score calculation
+// Keeping these here to avoid circular dependencies with client code
+function calculateFibonacciLevel(verificationCount: number): number {
+  // More verifications mean higher level
+  // Level 1: 1 verification, Level 2: 2 verifications, Level 3: 3-4, Level 4: 5+
+  if (verificationCount <= 0) return 0;
+  if (verificationCount === 1) return 1;
+  if (verificationCount === 2) return 2;
+  if (verificationCount <= 4) return 3;
+  if (verificationCount <= 7) return 4;
+  return Math.min(10, Math.floor(Math.log(verificationCount) / Math.log(1.5)) + 1);
+}
+
+function calculateFibonacciScore(verificationCount: number): number {
+  // Generate the first few Fibonacci numbers
+  const fibonacci = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
+  
+  // Verification count maps directly to the level
+  const level = calculateFibonacciLevel(verificationCount);
+  
+  // Return the Fibonacci number at that level
+  return level < fibonacci.length ? fibonacci[level] : 3;
+}
 
 export interface IStorage {
   // User methods

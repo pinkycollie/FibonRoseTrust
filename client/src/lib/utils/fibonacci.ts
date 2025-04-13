@@ -118,3 +118,28 @@ export function calculateTrustScore(
   // Round to nearest integer
   return Math.round(score);
 }
+
+// These functions are used by the server for calculating trust scores
+// Calculate Fibonacci level based on verification count
+export function calculateFibonacciLevel(verificationCount: number): number {
+  // More verifications mean higher level
+  // Level 1: 1 verification, Level 2: 2 verifications, Level 3: 3-4, Level 4: 5+
+  if (verificationCount <= 0) return 0;
+  if (verificationCount === 1) return 1;
+  if (verificationCount === 2) return 2;
+  if (verificationCount <= 4) return 3;
+  if (verificationCount <= 7) return 4;
+  return Math.min(10, Math.floor(Math.log(verificationCount) / Math.log(1.5)) + 1);
+}
+
+// Calculate Fibonacci score based on verification count
+export function calculateFibonacciScore(verificationCount: number): number {
+  // Generate the first few Fibonacci numbers
+  const fibonacci = generateFibonacciSequence(100);
+  
+  // Verification count maps directly to the level
+  const level = calculateFibonacciLevel(verificationCount);
+  
+  // Return the Fibonacci number at that level
+  return level < fibonacci.length ? fibonacci[level] : 3; // Default to 3 if level is beyond our sequence
+}
