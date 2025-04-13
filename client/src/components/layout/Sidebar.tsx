@@ -34,7 +34,7 @@ export function Sidebar() {
             <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
               <span className="material-icons text-white text-xl">fingerprint</span>
             </div>
-            <span className="ml-2 text-xl font-semibold">FibonRoseID</span>
+            <span className="ml-2 text-xl font-semibold">FibonroseTrust</span>
           </div>
         </div>
         <div className="flex flex-col flex-grow px-4 pt-5 pb-4 overflow-y-auto">

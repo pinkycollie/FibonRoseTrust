@@ -214,7 +214,7 @@ function createCardTexture({
   // Logo and title
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 48px Arial';
-  ctx.fillText('FibonRoseID', 60, 80);
+  ctx.fillText('FibonroseTrust', 60, 80);
   
   ctx.font = '24px Arial';
   ctx.fillStyle = adjustColor(highlightColor || '#4361ee', 80);

@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-// ABI for the FibonRoseID NFT contract
+// ABI for the FibonroseTrust NFT contract
 // This is a simplified ABI for demonstration, in production you would use the full ABI
 const NFT_IDENTITY_ABI = [
   // Read-only functions
@@ -32,7 +32,7 @@ const NFT_IDENTITY_ABI = [
   "event VerifierAuthorized(address indexed verifier, bool authorized)"
 ];
 
-// FibonRoseID NFT Contract Interface
+// FibonroseTrust NFT Contract Interface
 interface IdentityNFT {
   // Basic ERC721 functions
   balanceOf: (owner: string) => Promise<number>;
@@ -41,7 +41,7 @@ interface IdentityNFT {
   getApproved: (tokenId: string) => Promise<string>;
   isApprovedForAll: (owner: string, operator: string) => Promise<boolean>;
   
-  // FibonRoseID specific functions
+  // FibonroseTrust specific functions
   getVerificationStatus: (tokenId: string) => Promise<number>;
   getVerificationLevel: (tokenId: string) => Promise<number>;
   getVerificationTimestamp: (tokenId: string) => Promise<number>;

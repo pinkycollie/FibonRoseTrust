@@ -219,7 +219,7 @@ export default function NftAuthentication() {
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <div className="flex flex-col space-y-2 mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-800 dark:from-primary-400 dark:to-primary-600">FibonRoseID Authentication</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-800 dark:from-primary-400 dark:to-primary-600">FibonroseTrust Authentication</h1>
           <p className="text-lg text-muted-foreground">Secure digital identity verification with blockchain technology</p>
         </div>
         
