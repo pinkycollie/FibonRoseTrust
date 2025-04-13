@@ -9,6 +9,7 @@ import NftAuthentication from "@/pages/NftAuthentication";
 import VerificationHistoryPage from "@/pages/VerificationHistoryPage";
 import ApiIntegrations from "@/pages/ApiIntegrations";
 import Settings from "@/pages/Settings";
+import Webhooks from "@/pages/Webhooks";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useSidebar } from "./hooks/use-sidebar";
@@ -30,6 +31,7 @@ function Router() {
             <Route path="/nft-authentication" component={NftAuthentication} />
             <Route path="/verification-history" component={VerificationHistoryPage} />
             <Route path="/api-integrations" component={ApiIntegrations} />
+            <Route path="/webhooks" component={Webhooks} />
             <Route path="/settings" component={Settings} />
             <Route component={NotFound} />
           </Switch>

@@ -5,198 +5,186 @@ import { log } from '../vite';
 import axios from 'axios';
 
 /**
- * Webhook service for managing webhook deliveries and notifications
+ * Service for managing webhooks
  */
 export class WebhookService {
   /**
-   * Creates a signature for the webhook payload using the subscription's secret
-   * @param payload The payload to sign
-   * @param secret The webhook secret
-   * @returns The signature for the payload
+   * Create HMAC signature for webhook payload
    */
-  private static createSignature(payload: Record<string, any>, secret: string): string {
-    const payloadString = JSON.stringify(payload);
+  private static createSignature(payload: any, secret: string): string {
+    const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
     const hmac = crypto.createHmac('sha256', secret);
     return hmac.update(payloadString).digest('hex');
   }
-
+  
   /**
-   * Delivers a webhook to all subscriptions that match the event type
-   * @param eventType The event type
-   * @param payload The payload to deliver
+   * Deliver a webhook to all matching subscriptions
    */
-  public static async deliverToSubscriptions(eventType: EventType, payload: Record<string, any>): Promise<void> {
+  public static async deliverToSubscriptions(eventType: EventType, payload: any): Promise<void> {
     try {
       // Find all active subscriptions for this event type
       const subscriptions = await storage.getWebhookSubscriptions();
       const matchingSubscriptions = subscriptions.filter(
         subscription => subscription.isActive && subscription.events.includes(eventType)
       );
-
+      
       if (matchingSubscriptions.length === 0) {
-        log(`No active subscriptions for event ${eventType}`, 'webhook');
         return;
       }
-
+      
       log(`Delivering webhook for event ${eventType} to ${matchingSubscriptions.length} subscriptions`, 'webhook');
-
-      // Deliver to each subscription
-      const deliveryPromises = matchingSubscriptions.map(subscription =>
-        this.deliverWebhook(subscription, eventType, payload)
+      
+      // Deliver to each subscription in parallel
+      await Promise.all(
+        matchingSubscriptions.map(subscription => 
+          this.deliverWebhook(subscription, eventType, payload)
+        )
       );
-
-      await Promise.allSettled(deliveryPromises);
     } catch (error) {
-      log(`Error delivering webhooks: ${error}`, 'webhook');
+      log(`Error delivering webhooks: ${error instanceof Error ? error.message : String(error)}`, 'webhook');
     }
   }
-
+  
   /**
-   * Delivers a webhook to a specific subscription
-   * @param subscription The subscription to deliver to
-   * @param eventType The event type
-   * @param payload The payload to deliver
+   * Deliver a webhook to a specific subscription
    */
   private static async deliverWebhook(
     subscription: WebhookSubscription,
     eventType: EventType,
-    payload: Record<string, any>
+    payload: any
   ): Promise<WebhookDelivery> {
-    // Create webhook delivery record
-    const webhookPayload = {
-      event: eventType,
-      data: payload,
-      timestamp: new Date().toISOString(),
-    };
-
-    const deliveryRecord: InsertWebhookDelivery = {
+    // Create a webhook delivery record
+    const deliveryData: InsertWebhookDelivery = {
       subscriptionId: subscription.id,
       eventType,
-      payload: webhookPayload,
+      payload,
       status: 'pending'
     };
-
-    // Save initial delivery record
-    const delivery = await storage.createWebhookDelivery(deliveryRecord);
-
+    
+    const delivery = await storage.createWebhookDelivery(deliveryData);
+    
     try {
-      // Create signature for the webhook
-      const signature = this.createSignature(webhookPayload, subscription.secret);
-
-      // Set up the headers
+      // Create signature
+      const signature = this.createSignature(payload, subscription.secret);
+      
+      // Set up headers
       const headers = {
         'Content-Type': 'application/json',
         'X-FibonRoseTrust-Signature': signature,
         'X-FibonRoseTrust-Event': eventType,
         'User-Agent': 'FibonRoseTrust-Webhook/1.0',
-        ...subscription.headers
+        ...(subscription.headers || {})
       };
-
-      // Make the POST request to the webhook URL
-      const response = await axios.post(subscription.url, webhookPayload, {
+      
+      // Send the webhook
+      const response = await axios.post(subscription.url, payload, {
         headers,
-        timeout: 10000, // 10 second timeout
+        timeout: 10000 // 10 second timeout
       });
-
-      // Update delivery status to success
+      
+      // Update delivery record
       return await storage.updateWebhookDeliveryStatus(
         delivery.id,
         'success',
         response.status,
-        response.data ? JSON.stringify(response.data) : ''
+        typeof response.data === 'object' ? JSON.stringify(response.data) : String(response.data)
       );
     } catch (error) {
-      log(`Error delivering webhook ${delivery.id}: ${error}`, 'webhook');
+      log(`Error delivering webhook: ${error instanceof Error ? error.message : String(error)}`, 'webhook');
       
-      // Update delivery status to failed
+      // Handle axios error
+      const axiosError = error as any;
+      
+      // Update delivery record
       return await storage.updateWebhookDeliveryStatus(
         delivery.id,
         'failed',
-        error.response?.status,
-        error.response?.data ? JSON.stringify(error.response.data) : '',
-        error.message
+        axiosError.response?.status,
+        undefined,
+        axiosError.message
       );
     }
   }
-
+  
   /**
-   * Retries failed webhook deliveries with exponential backoff
-   * @param maxRetries Maximum number of retry attempts
+   * Retry failed webhook deliveries
    */
   public static async retryFailedDeliveries(maxRetries = 5): Promise<void> {
     try {
-      // Find all failed deliveries with fewer than maxRetries attempts
-      const allDeliveries = await storage.getWebhookDeliveries();
-      const failedDeliveries = allDeliveries.filter(
+      // Get all webhook deliveries
+      const deliveries = await storage.getWebhookDeliveries();
+      
+      // Filter for failed deliveries with fewer than maxRetries attempts
+      const failedDeliveries = deliveries.filter(
         delivery => delivery.status === 'failed' && delivery.attempts < maxRetries
       );
-
+      
       if (failedDeliveries.length === 0) {
         return;
       }
-
+      
       log(`Retrying ${failedDeliveries.length} failed webhook deliveries`, 'webhook');
-
+      
       // Process each failed delivery
       for (const delivery of failedDeliveries) {
+        // Get the subscription
         const subscription = await storage.getWebhookSubscription(delivery.subscriptionId);
         
         if (!subscription || !subscription.isActive) {
           continue;
         }
-
-        // Exponential backoff based on attempt count (2^attempts seconds)
-        const delay = Math.pow(2, delivery.attempts) * 1000;
-        log(`Retry delivery ${delivery.id}, attempt ${delivery.attempts + 1}, delay ${delay}ms`, 'webhook');
         
         try {
-          // Create signature for the webhook
+          // Create signature
           const signature = this.createSignature(delivery.payload, subscription.secret);
-
-          // Set up the headers
+          
+          // Set up headers
           const headers = {
             'Content-Type': 'application/json',
             'X-FibonRoseTrust-Signature': signature,
             'X-FibonRoseTrust-Event': delivery.eventType,
             'User-Agent': 'FibonRoseTrust-Webhook/1.0',
-            ...subscription.headers
+            ...(subscription.headers || {})
           };
-
-          // Make the POST request to the webhook URL
+          
+          // Send the webhook
           const response = await axios.post(subscription.url, delivery.payload, {
             headers,
-            timeout: 10000, // 10 second timeout
+            timeout: 10000 // 10 second timeout
           });
-
-          // Update delivery status to success
+          
+          // Update delivery record
           await storage.updateWebhookDeliveryStatus(
             delivery.id,
             'success',
             response.status,
-            response.data ? JSON.stringify(response.data) : ''
+            typeof response.data === 'object' ? JSON.stringify(response.data) : String(response.data)
           );
+          
+          log(`Successfully retried webhook delivery ${delivery.id}`, 'webhook');
         } catch (error) {
-          // Update attempt count but still mark as failed
+          log(`Error retrying webhook delivery ${delivery.id}: ${error instanceof Error ? error.message : String(error)}`, 'webhook');
+          
+          // Handle axios error
+          const axiosError = error as any;
+          
+          // Update delivery record (increment attempt count)
           await storage.updateWebhookDeliveryStatus(
             delivery.id,
             'failed',
-            error.response?.status,
-            error.response?.data ? JSON.stringify(error.response.data) : '',
-            error.message
+            axiosError.response?.status,
+            undefined,
+            axiosError.message
           );
         }
       }
     } catch (error) {
-      log(`Error retrying webhook deliveries: ${error}`, 'webhook');
+      log(`Error retrying webhook deliveries: ${error instanceof Error ? error.message : String(error)}`, 'webhook');
     }
   }
 }
 
-/**
- * Convenience function to trigger a webhook event
- * @param eventType The event type
- * @param payload The payload to deliver
- */
-export async function triggerWebhook(eventType: EventType, payload: Record<string, any>): Promise<void> {
+// Convenience function to trigger a webhook event
+export async function triggerWebhook(eventType: EventType, payload: any): Promise<void> {
   return WebhookService.deliverToSubscriptions(eventType, payload);
 }
