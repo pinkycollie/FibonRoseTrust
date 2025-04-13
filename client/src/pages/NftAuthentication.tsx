@@ -216,19 +216,19 @@ export default function NftAuthentication() {
   };
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="flex flex-col space-y-2 mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-800 dark:from-primary-400 dark:to-primary-600">FibonroseTrust Authentication</h1>
-          <p className="text-lg text-muted-foreground">Secure digital identity verification with blockchain technology</p>
+    <div className="py-4 sm:py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 md:px-8">
+        <div className="flex flex-col space-y-2 mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-800 dark:from-primary-400 dark:to-primary-600">FibonroseTrust Authentication</h1>
+          <p className="text-base sm:text-lg text-muted-foreground">Secure digital identity verification with blockchain technology</p>
         </div>
         
         <Tabs defaultValue="verify" className="mt-6">
-          <TabsList className="grid w-full grid-cols-4 mb-6 rounded-lg bg-muted p-1">
-            <TabsTrigger value="verify" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow">Verify NFT</TabsTrigger>
-            <TabsTrigger value="mint" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow">Mint ID NFT</TabsTrigger>
-            <TabsTrigger value="showcase" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow">NFT Showcase</TabsTrigger>
-            <TabsTrigger value="contract" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow">Smart Contract</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-6 rounded-lg bg-muted p-1 gap-1 sm:gap-0">
+            <TabsTrigger value="verify" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow text-xs sm:text-sm">Verify NFT</TabsTrigger>
+            <TabsTrigger value="mint" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow text-xs sm:text-sm">Mint ID NFT</TabsTrigger>
+            <TabsTrigger value="showcase" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow text-xs sm:text-sm">NFT Showcase</TabsTrigger>
+            <TabsTrigger value="contract" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow text-xs sm:text-sm">Smart Contract</TabsTrigger>
           </TabsList>
           
           <TabsContent value="verify">
@@ -236,31 +236,31 @@ export default function NftAuthentication() {
               <div className="space-y-8">
                 <Card className="overflow-hidden border-0 shadow-md">
                   <div className="h-1.5 bg-gradient-to-r from-primary-400 to-primary-600" />
-                  <CardHeader>
+                  <CardHeader className="p-4 sm:p-6">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 bg-primary-100 dark:bg-primary-900 rounded-full p-2.5 mr-4">
-                        <span className="material-icons text-primary">token</span>
+                      <div className="flex-shrink-0 bg-primary-100 dark:bg-primary-900 rounded-full p-2 sm:p-2.5 mr-3 sm:mr-4">
+                        <span className="material-icons text-sm sm:text-base text-primary">token</span>
                       </div>
                       <div>
-                        <h2 className="text-xl font-semibold tracking-tight">NFT Verification</h2>
-                        <CardDescription>Connect your blockchain wallet to verify your identity NFT</CardDescription>
+                        <h2 className="text-lg sm:text-xl font-semibold tracking-tight">NFT Verification</h2>
+                        <CardDescription className="text-xs sm:text-sm">Connect your blockchain wallet to verify your identity NFT</CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="p-6 pt-0">
-                    <div className="p-4 rounded-lg bg-muted mb-6">
+                  <CardContent className="p-4 sm:p-6 pt-0">
+                    <div className="p-3 sm:p-4 rounded-lg bg-muted mb-5 sm:mb-6">
                       <div className="flex items-start">
-                        <span className="material-icons text-amber-500 mt-0.5 mr-2">info</span>
-                        <p className="text-sm text-muted-foreground">
+                        <span className="material-icons text-amber-500 mt-0.5 mr-2 text-sm sm:text-base">info</span>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           Your NFT must be in the connected wallet to verify. The verification process confirms your identity without sharing personal data.
                         </p>
                       </div>
                     </div>
                   
-                    <div className="space-y-5">
-                      <div className="space-y-2.5">
-                        <Label htmlFor="wallet-address" className="text-base font-medium">Wallet Address</Label>
+                    <div className="space-y-4 sm:space-y-5">
+                      <div className="space-y-1.5 sm:space-y-2.5">
+                        <Label htmlFor="wallet-address" className="text-sm sm:text-base font-medium">Wallet Address</Label>
                         <div className="flex space-x-2">
                           <div className="relative flex-1">
                             <Input
@@ -279,28 +279,30 @@ export default function NftAuthentication() {
                           {!isConnected && (
                             <Button 
                               onClick={connectWallet} 
-                              className="gap-1 bg-gradient-to-r from-primary-600 to-primary-500 text-white hover:from-primary-700 hover:to-primary-600"
+                              className="gap-1 bg-gradient-to-r from-primary-600 to-primary-500 text-white hover:from-primary-700 hover:to-primary-600 px-2 sm:px-3"
                               disabled={isVerifying}
+                              size="sm"
                             >
                               <span className="material-icons text-sm">link</span>
-                              Connect
+                              <span className="text-xs sm:text-sm">Connect</span>
                             </Button>
                           )}
                           {isConnected && (
                             <Button
                               variant="outline"
-                              className="gap-1 border-green-500 text-green-600"
+                              className="gap-1 border-green-500 text-green-600 px-2 sm:px-3"
                               disabled
+                              size="sm"
                             >
                               <span className="material-icons text-sm">check_circle</span>
-                              Connected
+                              <span className="text-xs sm:text-sm">Connected</span>
                             </Button>
                           )}
                         </div>
                       </div>
                       
-                      <div className="space-y-2.5">
-                        <Label htmlFor="token-id" className="text-base font-medium">Token ID</Label>
+                      <div className="space-y-1.5 sm:space-y-2.5">
+                        <Label htmlFor="token-id" className="text-sm sm:text-base font-medium">Token ID</Label>
                         <div className="relative">
                           <Input
                             id="token-id"
@@ -319,21 +321,22 @@ export default function NftAuthentication() {
                     </div>
                   </CardContent>
                   
-                  <CardFooter className="px-6 py-4 bg-muted/30 border-t flex justify-end">
+                  <CardFooter className="px-4 sm:px-6 py-4 bg-muted/30 border-t flex justify-end">
                     <Button 
                       onClick={handleVerifyNft}
                       disabled={isVerifying || !walletAddress || !tokenId}
-                      className="gap-1"
+                      className="gap-1 text-xs sm:text-sm"
+                      size="sm"
                     >
                       {isVerifying ? (
                         <>
                           <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                          Verifying...
+                          <span>Verifying...</span>
                         </>
                       ) : (
                         <>
                           <span className="material-icons text-sm">verified_user</span>
-                          Verify NFT
+                          <span>Verify NFT</span>
                         </>
                       )}
                     </Button>
