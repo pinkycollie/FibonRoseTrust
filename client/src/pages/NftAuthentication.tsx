@@ -832,12 +832,12 @@ export default function NftAuthentication() {
         </Tabs>
 
         <div className="mt-10 mb-4">
-          <div className="flex flex-col items-center text-center mb-8">
+          <div className="flex flex-col items-center text-center mb-8 px-4">
             <h2 className="text-2xl font-bold tracking-tight mb-2">Ecosystem Partners</h2>
-            <p className="text-muted-foreground max-w-2xl">FibonroseTrust integrates with these trusted identity providers in the blockchain ecosystem</p>
+            <p className="text-muted-foreground max-w-2xl text-sm sm:text-base">FibonroseTrust integrates with these trusted identity providers in the blockchain ecosystem</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-4">
             {[
               { 
                 name: "NegraSecurity Identity", 
@@ -863,26 +863,26 @@ export default function NftAuthentication() {
             ].map((collection, index) => (
               <Card key={index} className="overflow-hidden border-0 shadow-md">
                 <div className={`h-2 bg-gradient-to-r ${collection.color}`} />
-                <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                  <div className="w-12 h-12 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center shrink-0">
-                    <span className="material-icons text-xl text-primary">{collection.icon}</span>
+                <CardHeader className="flex flex-row items-start sm:items-center gap-3 pb-2 p-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary-100 dark:bg-primary-900 flex items-center justify-center shrink-0">
+                    <span className="material-icons text-lg sm:text-xl text-primary">{collection.icon}</span>
                   </div>
-                  <div>
-                    <CardTitle className="text-xl">{collection.name}</CardTitle>
-                    <CardDescription className="flex items-center">
+                  <div className="min-w-0">
+                    <CardTitle className="text-base sm:text-xl truncate">{collection.name}</CardTitle>
+                    <CardDescription className="flex items-center text-xs sm:text-sm">
                       <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
                       {collection.network} Network
                     </CardDescription>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{collection.description}</p>
+                <CardContent className="p-4 pt-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground">{collection.description}</p>
                 </CardContent>
-                <CardFooter className="border-t bg-muted/40 pt-3 flex justify-between">
-                  <Button variant="ghost" size="sm" className="text-xs">
+                <CardFooter className="border-t bg-muted/40 pt-3 flex justify-between p-4">
+                  <Button variant="ghost" size="sm" className="text-xs px-2 sm:px-3">
                     Learn More
                   </Button>
-                  <Button variant="outline" size="sm" className="text-xs">
+                  <Button variant="outline" size="sm" className="text-xs px-2 sm:px-3">
                     <span className="material-icons text-sm mr-1">link</span>
                     Connect
                   </Button>
