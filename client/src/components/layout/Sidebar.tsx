@@ -69,6 +69,27 @@ const developerNavItems: NavItem[] = [
     description: "Set up webhook endpoints",
     roles: ['developer', 'admin']
   },
+  {
+    href: "/pinksync",
+    label: "PinkSync",
+    icon: "code",
+    description: "Developer assistant and trigger engine",
+    roles: ['developer', 'admin']
+  },
+  {
+    href: "/docuhands",
+    label: "DocuHands",
+    icon: "description",
+    description: "Documentation + automation scripting",
+    roles: ['developer', 'admin']
+  },
+  {
+    href: "/xano-console",
+    label: "Xano",
+    icon: "cloud",
+    description: "Xano integration console",
+    roles: ['developer', 'admin']
+  },
 ];
 
 export function Sidebar() {
@@ -78,7 +99,12 @@ export function Sidebar() {
   
   // For demo purposes - would be fetched from authentication context in real app
   useEffect(() => {
-    // Simulate fetching user role from API/auth context
+    // In development environment, default to developer mode for easier access to all tools
+    // If devMode is not set in sessionStorage, default to true for development
+    const devMode = sessionStorage.getItem('devMode');
+    if (devMode === null) {
+      sessionStorage.setItem('devMode', 'true');
+    }
     const hasDevPermission = sessionStorage.getItem('devMode') === 'true';
     setUserRole(hasDevPermission ? 'developer' : 'user');
   }, []);
