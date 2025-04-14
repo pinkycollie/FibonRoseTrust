@@ -170,26 +170,41 @@ export function NegraRosaSecurity({
       </CardHeader>
       
       <CardContent>
-        <div className="mb-6">
+        <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium">
-              Security Level: <span className="font-bold capitalize">{securityLevel}</span>
-            </span>
-            <span className="text-xs text-gray-500">
-              {getSecurityProgress()}% complete
-            </span>
+            <div className="flex items-center">
+              <span className="material-icons text-primary-500 mr-1">security</span>
+              <span className="text-sm font-medium">
+                Security Level: <span className="font-bold capitalize">{securityLevel}</span>
+              </span>
+            </div>
+            <div className="flex items-center">
+              <span className="material-icons text-primary-500 text-xs mr-1">trending_up</span>
+              <span className="text-xs text-gray-500">
+                {getSecurityProgress()}% complete
+              </span>
+            </div>
           </div>
           <Progress 
             value={getSecurityProgress()} 
-            className={`h-2 ${securityLevelColors[securityLevel as keyof typeof securityLevelColors] || "bg-gray-500"}`} 
+            className={`h-3 ${securityLevelColors[securityLevel as keyof typeof securityLevelColors] || "bg-gray-500"}`} 
           />
         </div>
         
         <Tabs defaultValue="why" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="why" className="text-sm">WHY System</TabsTrigger>
-            <TabsTrigger value="risk" className="text-sm">Risk Assessment</TabsTrigger>
-            <TabsTrigger value="eo" className="text-sm">E&O Claims</TabsTrigger>
+            <TabsTrigger value="why" className="text-sm flex flex-col items-center py-3">
+              <span className="material-icons mb-1">vpn_key</span>
+              <span>WHY</span>
+            </TabsTrigger>
+            <TabsTrigger value="risk" className="text-sm flex flex-col items-center py-3">
+              <span className="material-icons mb-1">analytics</span>
+              <span>Risk</span>
+            </TabsTrigger>
+            <TabsTrigger value="eo" className="text-sm flex flex-col items-center py-3">
+              <span className="material-icons mb-1">gavel</span>
+              <span>E&O</span>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="why">
@@ -221,6 +236,9 @@ export function NegraRosaSecurity({
                 onClick={performWHYVerification}
                 disabled={loading}
               >
+                <span className="material-icons text-base mr-2">
+                  {loading ? "pending" : "key"}
+                </span>
                 {loading ? "Processing..." : "Perform WHY Verification"}
               </Button>
             </div>
@@ -252,6 +270,9 @@ export function NegraRosaSecurity({
                 onClick={requestRiskAssessment}
                 disabled={loading}
               >
+                <span className="material-icons text-base mr-2">
+                  {loading ? "pending" : "assessment"}
+                </span>
                 {loading ? "Processing..." : "Request Risk Assessment"}
               </Button>
             </div>
@@ -276,6 +297,9 @@ export function NegraRosaSecurity({
                 className="w-full"
                 onClick={fileEOClaim}
               >
+                <span className="material-icons text-base mr-2">
+                  gavel
+                </span>
                 File E&O Claim
               </Button>
             </div>
