@@ -58,6 +58,8 @@
     "embla-carousel-react": "^8.3.0",
     "ethers": "^6.13.5",
     "express": "^4.21.2",
+    "express-oauth2-jwt-bearer": "^1.6.1",
+    "express-openid-connect": "^2.18.0",
     "express-session": "^1.18.1",
     "fast-csv": "^5.0.2",
     "framer-motion": "^11.13.1",

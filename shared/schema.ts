@@ -9,6 +9,12 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   avatarUrl: text("avatar_url"),
+  // Auth0 integration fields
+  auth0Sub: text("auth0_sub").unique(),
+  role: text("role").default("user"),
+  emailVerified: boolean("email_verified").default(false),
+  profilePictureUrl: text("profile_picture_url"),
+  lastLogin: timestamp("last_login", { mode: 'date' }),
 });
 
 export const verificationTypes = pgTable("verification_types", {
@@ -108,6 +114,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
   avatarUrl: true,
+  // Auth0 fields
+  auth0Sub: true,
+  role: true,
+  emailVerified: true,
+  profilePictureUrl: true,
+  lastLogin: true,
 });
 
 export const insertVerificationTypeSchema = createInsertSchema(verificationTypes);
