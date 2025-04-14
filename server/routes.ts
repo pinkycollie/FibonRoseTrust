@@ -19,6 +19,7 @@ import { XanoIntegration } from './services/integrations/xano';
 import { universalWebhookManager } from './services/universal-webhook';
 import { setupAuth, requiresDeveloper } from './auth';
 import { negraRosaAuth0 } from './services/integrations/negrarosa-auth0';
+import apiRouter from './controllers/api';
 
 // Configure multer for file uploads
 const upload = multer({
@@ -32,6 +33,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Seed initial data
   await storage.seedInitialData();
+  
+  // Register versioned REST API routes
+  app.use('/api', apiRouter);
+  
+  // Legacy routes - these will eventually be migrated to the new API structure
   
   // User routes
   app.get('/api/user/:id', async (req: Request, res: Response) => {

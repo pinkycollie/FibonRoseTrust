@@ -11,6 +11,17 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import { ZodSchema } from 'zod';
 import { storage } from '../../storage';
+import { User } from '@shared/schema';
+
+// Extend Express Request type to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+      isAuthenticated(): boolean;
+    }
+  }
+}
 
 export interface PaginationOptions {
   page: number;
