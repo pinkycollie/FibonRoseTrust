@@ -6,7 +6,8 @@ import {
   dataPermissions, type DataPermission, type InsertDataPermission,
   webhookSubscriptions, type WebhookSubscription, type InsertWebhookSubscription,
   webhookDeliveries, type WebhookDelivery, type InsertWebhookDelivery,
-  notionIntegrations, type NotionIntegration, type InsertNotionIntegration
+  notionIntegrations, type NotionIntegration, type InsertNotionIntegration,
+  xanoIntegrations, type XanoIntegration, type InsertXanoIntegration
 } from "@shared/schema";
 
 // Simple Fibonacci functions for server-side trust score calculation
@@ -81,6 +82,13 @@ export interface IStorage {
   updateNotionIntegration(id: number, updates: Partial<NotionIntegration>): Promise<NotionIntegration | undefined>;
   deleteNotionIntegration(id: number): Promise<boolean>;
   
+  // Xano integration methods
+  getXanoIntegrations(userId: number): Promise<XanoIntegration[]>;
+  getXanoIntegration(id: number): Promise<XanoIntegration | undefined>;
+  createXanoIntegration(integration: InsertXanoIntegration): Promise<XanoIntegration>;
+  updateXanoIntegration(id: number, updates: Partial<XanoIntegration>): Promise<XanoIntegration | undefined>;
+  deleteXanoIntegration(id: number): Promise<boolean>;
+  
   // Initialization methods
   seedInitialData(): Promise<void>;
 }
@@ -94,6 +102,7 @@ export class MemStorage implements IStorage {
   private webhookSubscriptions: Map<number, WebhookSubscription>;
   private webhookDeliveries: Map<number, WebhookDelivery>;
   private notionIntegrations: Map<number, NotionIntegration>;
+  private xanoIntegrations: Map<number, XanoIntegration>;
   
   private userId: number;
   private verificationTypeId: number;
@@ -103,6 +112,7 @@ export class MemStorage implements IStorage {
   private webhookSubscriptionId: number;
   private webhookDeliveryId: number;
   private notionIntegrationId: number;
+  private xanoIntegrationId: number;
 
   constructor() {
     this.users = new Map();
@@ -113,6 +123,7 @@ export class MemStorage implements IStorage {
     this.webhookSubscriptions = new Map();
     this.webhookDeliveries = new Map();
     this.notionIntegrations = new Map();
+    this.xanoIntegrations = new Map();
     
     this.userId = 1;
     this.verificationTypeId = 1;
@@ -122,6 +133,7 @@ export class MemStorage implements IStorage {
     this.webhookSubscriptionId = 1;
     this.webhookDeliveryId = 1;
     this.notionIntegrationId = 1;
+    this.xanoIntegrationId = 1;
   }
 
   // User methods

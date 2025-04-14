@@ -200,7 +200,7 @@ class UniversalWebhookManager {
         deliveryId,
         'FAILED',
         error instanceof axios.AxiosError ? error.response?.status || 0 : 0,
-        null,
+        '',
         error instanceof Error ? error.message : String(error)
       );
     }
@@ -317,11 +317,11 @@ class UniversalWebhookManager {
       for (const sub of subscriptions) {
         csvStream.write({
           id: sub.id.toString(),
-          userId: sub.userId.toString(),
+          name: sub.name,
           url: sub.url,
           events: sub.events.join(','),
-          description: sub.description,
-          active: sub.active.toString(),
+          isActive: sub.isActive.toString(),
+          partnerId: sub.partnerId?.toString() || '',
           secret: sub.secret || ''
         });
       }

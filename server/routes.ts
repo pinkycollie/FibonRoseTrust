@@ -288,6 +288,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync('uploads');
   }
   
+  // Configure Xano integration API
+  app.post('/api/xano/configure', async (req: Request, res: Response) => {
+    try {
+      const { apiKey, webhookSecret, baseUrl, userId } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: 'API key is required' });
+      }
+      
+      // Initialize Xano integration
+      XanoIntegration.setApiKey(apiKey);
+      
+      // Test the connection
+      const connectionSuccess = await XanoIntegration.testConnection();
+      
+      if (!connectionSuccess) {
+        return res.status(400).json({ message: 'Failed to connect to Xano with the provided API key' });
+      }
+      
+      // Create Xano integration record in the database
+      const integration = await storage.createXanoIntegration({
+        userId: userId || 1,
+        apiKey,
+        baseUrl: baseUrl || 'https://x8ki-letl-twmt.n7.xano.io',
+        webhookSecret: webhookSecret || '',
+        isActive: true,
+        aiEnabled: false
+      });
+      
+      res.status(201).json({
+        message: 'Xano integration configured successfully',
+        integration: {
+          id: integration.id,
+          userId: integration.userId,
+          baseUrl: integration.baseUrl,
+          isActive: integration.isActive
+        }
+      });
+    } catch (error) {
+      console.error('Error configuring Xano integration:', error);
+      res.status(500).json({ 
+        message: 'Failed to configure Xano integration', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
   // Dedicated Xano webhook endpoint for x8ki-letl-twmt.n7.xano.io
   app.post('/api/webhook/xano', async (req: Request, res: Response) => {
     try {
