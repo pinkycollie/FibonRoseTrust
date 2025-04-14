@@ -482,7 +482,11 @@ export class MemStorage implements IStorage {
       ...delivery, 
       id,
       createdAt,
-      attempts: 0
+      attempts: 0,
+      processedAt: null,
+      statusCode: delivery.statusCode || null,
+      response: delivery.response || null,
+      errorMessage: delivery.errorMessage || null
     };
     
     this.webhookDeliveries.set(id, newDelivery);
@@ -546,6 +550,46 @@ export class MemStorage implements IStorage {
   
   async deleteNotionIntegration(id: number): Promise<boolean> {
     return this.notionIntegrations.delete(id);
+  }
+  
+  // Xano integration methods
+  async getXanoIntegrations(userId: number): Promise<XanoIntegration[]> {
+    return Array.from(this.xanoIntegrations.values()).filter(
+      (integration) => integration.userId === userId
+    );
+  }
+  
+  async getXanoIntegration(id: number): Promise<XanoIntegration | undefined> {
+    return this.xanoIntegrations.get(id);
+  }
+  
+  async createXanoIntegration(integration: InsertXanoIntegration): Promise<XanoIntegration> {
+    const id = this.xanoIntegrationId++;
+    const newIntegration: XanoIntegration = { 
+      ...integration, 
+      id, 
+      lastSynced: null,
+      createdAt: new Date()
+    };
+    this.xanoIntegrations.set(id, newIntegration);
+    return newIntegration;
+  }
+  
+  async updateXanoIntegration(id: number, updates: Partial<XanoIntegration>): Promise<XanoIntegration | undefined> {
+    const integration = this.xanoIntegrations.get(id);
+    if (!integration) return undefined;
+    
+    const updatedIntegration: XanoIntegration = {
+      ...integration,
+      ...updates,
+    };
+    
+    this.xanoIntegrations.set(id, updatedIntegration);
+    return updatedIntegration;
+  }
+  
+  async deleteXanoIntegration(id: number): Promise<boolean> {
+    return this.xanoIntegrations.delete(id);
   }
 }
 
