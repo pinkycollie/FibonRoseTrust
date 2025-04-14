@@ -138,14 +138,9 @@ class UniversalWebhookManager {
     // Create delivery record
     const delivery = await storage.createWebhookDelivery({
       subscriptionId,
-      source: 'test',
       eventType,
       status: 'PENDING',
-      requestHeaders: JSON.stringify({}),
-      requestPayload: JSON.stringify(payload),
-      responseStatus: null,
-      responseBody: null,
-      error: null
+      payload: typeof payload === 'string' ? JSON.parse(payload) : payload
     });
     
     // Deliver the webhook
@@ -236,16 +231,20 @@ class UniversalWebhookManager {
     payload: any,
     headers: Record<string, string>
   ): Promise<WebhookDelivery> {
+    // Get first webhook subscription for source (or create a default one if none exists)
+    const subscriptions = await storage.getWebhookSubscriptions();
+    let subscriptionId = 1; // Default to first subscription
+    
+    if (subscriptions.length > 0) {
+      subscriptionId = subscriptions[0].id;
+    }
+    
     // Create delivery record
     const delivery = await storage.createWebhookDelivery({
-      source,
+      subscriptionId,
       eventType: payload.eventType || 'unknown',
       status: 'RECEIVED',
-      requestHeaders: JSON.stringify(headers),
-      requestPayload: JSON.stringify(payload),
-      responseStatus: null,
-      responseBody: null,
-      error: null
+      payload: typeof payload === 'string' ? JSON.parse(payload) : payload
     });
     
     return delivery;
@@ -270,12 +269,13 @@ class UniversalWebhookManager {
             for (const sub of subscriptions) {
               try {
                 await storage.createWebhookSubscription({
-                  userId: parseInt(sub.userId) || 1,
+                  name: sub.name || `Webhook ${importCount + 1}`,
                   url: sub.url,
                   events: sub.events.split(',').map((e: string) => e.trim()),
-                  description: sub.description || '',
-                  active: sub.active === 'true',
-                  secret: sub.secret || null
+                  isActive: sub.isActive === 'true' || sub.active === 'true',
+                  secret: sub.secret || 'secret',
+                  partnerId: sub.partnerId ? parseInt(sub.partnerId) : null,
+                  headers: {}
                 });
                 importCount++;
               } catch (error) {

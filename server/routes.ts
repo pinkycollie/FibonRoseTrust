@@ -14,6 +14,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { WebhookService } from './services/webhook';
+import { XanoIntegration } from './services/integrations/xano';
 
 // Configure multer for file uploads
 const upload = multer({
@@ -285,6 +287,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads');
   }
+  
+  // Dedicated Xano webhook endpoint for x8ki-letl-twmt.n7.xano.io
+  app.post('/api/webhook/xano', async (req: Request, res: Response) => {
+    try {
+      // Process the webhook using the dedicated integration
+      const normalizedData = XanoIntegration.processWebhook(
+        req.headers as Record<string, string>, 
+        req.body
+      );
+      
+      // For debugging
+      console.log('Received Xano webhook:', {
+        eventType: normalizedData.eventType,
+        source: normalizedData.source,
+        timestamp: normalizedData.timestamp
+      });
+      
+      // Process the webhook
+      const delivery = await WebhookService.processIncomingWebhook(
+        'xano', 
+        normalizedData.payload, 
+        req.headers as Record<string, string>
+      );
+      
+      res.status(202).json({
+        message: 'Xano webhook processed',
+        deliveryId: delivery.id,
+        status: delivery.status
+      });
+    } catch (error) {
+      console.error('Error processing Xano webhook:', error);
+      res.status(500).json({ 
+        message: 'Failed to process Xano webhook', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Universal webhook endpoint that supports any source
+  app.post('/api/webhook/:source', async (req: Request, res: Response) => {
+    const source = req.params.source;
+    
+    if (!source) {
+      return res.status(400).json({ message: 'Source parameter is required' });
+    }
+    
+    try {
+      const delivery = await WebhookService.processIncomingWebhook(
+        source,
+        req.body,
+        req.headers as Record<string, string>
+      );
+      
+      res.status(202).json({ 
+        message: 'Webhook received', 
+        deliveryId: delivery.id,
+        status: delivery.status 
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to process webhook', error });
+    }
+  });
   
   const httpServer = createServer(app);
   return httpServer;

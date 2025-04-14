@@ -94,28 +94,21 @@ export class WebhookService {
       // Find active subscriptions for this event type
       const subscriptions = await storage.getWebhookSubscriptions();
       const matchingSubscriptions = subscriptions.filter(
-        sub => sub.active && sub.events.includes(eventType)
+        sub => sub.isActive && sub.events.includes(eventType)
       );
       
       log(`Found ${matchingSubscriptions.length} subscriptions for event ${eventType}`, 'webhook');
       
       // Create a delivery record (we'll just use the first subscription for this)
       const subscription = matchingSubscriptions[0];
-      const subscriptionId = subscription?.id || 0;
+      const subscriptionId = subscription?.id || 1;
       
       // Create the delivery
       const delivery = await storage.createWebhookDelivery({
         subscriptionId,
         eventType,
         status: 'PENDING',
-        requestHeaders: JSON.stringify({
-          'Content-Type': 'application/json',
-          'X-FibonroseTrust-Event': eventType
-        }),
-        requestPayload: JSON.stringify(payload),
-        responseStatus: null,
-        responseBody: null,
-        error: null
+        payload: typeof payload === 'string' ? JSON.parse(payload) : payload
       });
       
       // For demo/test purposes, auto-succeed the delivery
