@@ -1,4 +1,4 @@
-import { Request, Response, Express } from 'express';
+import { Request, Response, Express, NextFunction } from 'express';
 import { Server, createServer } from 'http';
 import { storage } from './storage';
 import { 
@@ -17,6 +17,8 @@ import crypto from 'crypto';
 import { WebhookService } from './services/webhook';
 import { XanoIntegration } from './services/integrations/xano';
 import { universalWebhookManager } from './services/universal-webhook';
+import { setupAuth, requiresDeveloper } from './auth';
+import { negraRosaAuth0 } from './services/integrations/negrarosa-auth0';
 
 // Configure multer for file uploads
 const upload = multer({
@@ -25,6 +27,9 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup Auth0 authentication
+  setupAuth(app);
+  
   // Seed initial data
   await storage.seedInitialData();
   
@@ -427,8 +432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Webhook subscription management endpoints
   
-  // List all webhook subscriptions
-  app.get('/api/webhook/subscriptions', async (_req: Request, res: Response) => {
+  // List all webhook subscriptions - requires developer access
+  app.get('/api/webhook/subscriptions', requiresDeveloper, async (_req: Request, res: Response) => {
     try {
       const subscriptions = await storage.getWebhookSubscriptions();
       res.status(200).json(subscriptions);
@@ -442,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get a specific webhook subscription
-  app.get('/api/webhook/subscriptions/:id', async (req: Request, res: Response) => {
+  app.get('/api/webhook/subscriptions/:id', requiresDeveloper, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -465,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create a new webhook subscription
-  app.post('/api/webhook/subscriptions', async (req: Request, res: Response) => {
+  app.post('/api/webhook/subscriptions', requiresDeveloper, async (req: Request, res: Response) => {
     try {
       const { name, url, events, secret, isActive } = req.body;
       
@@ -494,7 +499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update a webhook subscription
-  app.patch('/api/webhook/subscriptions/:id', async (req: Request, res: Response) => {
+  app.patch('/api/webhook/subscriptions/:id', requiresDeveloper, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
