@@ -1,0 +1,231 @@
+{
+  "title": "Trust Score API Documentation",
+  "description": "API endpoints for managing trust scores in the FibonroseTrust system",
+  "version": "1.0.0",
+  "baseUrl": "/api/v1/trust-scores",
+  "endpoints": [
+    {
+      "path": "/user/{userId}",
+      "method": "GET",
+      "description": "Get trust score for a specific user",
+      "parameters": {
+        "path": [
+          {
+            "name": "userId",
+            "type": "integer",
+            "description": "User ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Trust score details",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "userId": {"type": "integer"},
+                  "score": {"type": "number"},
+                  "level": {"type": "integer"},
+                  "maxScore": {"type": "number"},
+                  "lastUpdated": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Trust score not found"
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/",
+      "method": "POST",
+      "description": "Create initial trust score for a user",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "userId": {
+              "type": "integer",
+              "description": "User ID",
+              "required": true
+            },
+            "score": {
+              "type": "number",
+              "description": "Initial score value",
+              "required": true
+            },
+            "level": {
+              "type": "integer",
+              "description": "Initial Fibonacci level",
+              "required": true
+            },
+            "maxScore": {
+              "type": "number",
+              "description": "Maximum score for current level",
+              "required": true
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Trust score created successfully",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "userId": {"type": "integer"},
+                  "score": {"type": "number"},
+                  "level": {"type": "integer"},
+                  "maxScore": {"type": "number"},
+                  "lastUpdated": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid trust score data"
+        },
+        "404": {
+          "description": "User not found"
+        },
+        "409": {
+          "description": "Trust score already exists for this user"
+        }
+      },
+      "requiresAuth": true
+    },
+    {
+      "path": "/user/{userId}/update",
+      "method": "POST",
+      "description": "Calculate and update trust score for a user",
+      "parameters": {
+        "path": [
+          {
+            "name": "userId",
+            "type": "integer",
+            "description": "User ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Updated trust score",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "userId": {"type": "integer"},
+                  "score": {"type": "number"},
+                  "level": {"type": "integer"},
+                  "maxScore": {"type": "number"},
+                  "lastUpdated": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Trust score not found"
+        }
+      },
+      "requiresAuth": true
+    },
+    {
+      "path": "/levels",
+      "method": "GET",
+      "description": "Get Fibonacci trust level definitions and requirements",
+      "responses": {
+        "200": {
+          "description": "List of trust levels with details",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "level": {"type": "integer"},
+                    "score": {"type": "number"},
+                    "name": {"type": "string"},
+                    "description": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/levels/{level}/permissions",
+      "method": "GET",
+      "description": "Get permissions available at a specific trust level",
+      "parameters": {
+        "path": [
+          {
+            "name": "level",
+            "type": "integer",
+            "description": "Trust level (1-21)",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Permission map for specified trust level",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "example": {
+                  "basic_identity": true,
+                  "self_verification": true,
+                  "request_verification": true,
+                  "view_public_profiles": false,
+                  "mint_nft_id": false
+                }
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Invalid trust level"
+        }
+      },
+      "requiresAuth": false
+    }
+  ]
+}

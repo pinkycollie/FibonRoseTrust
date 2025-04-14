@@ -1,0 +1,298 @@
+{
+  "title": "User API Documentation",
+  "description": "API endpoints for managing users and user profiles in the FibonroseTrust system",
+  "version": "1.0.0",
+  "baseUrl": "/api/v1/users",
+  "endpoints": [
+    {
+      "path": "/",
+      "method": "GET",
+      "description": "Get a list of all users (admin only)",
+      "parameters": {
+        "query": [
+          {
+            "name": "page",
+            "type": "integer",
+            "description": "Page number for pagination",
+            "required": false,
+            "default": 1
+          },
+          {
+            "name": "limit",
+            "type": "integer",
+            "description": "Number of items per page",
+            "required": false,
+            "default": 10
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "List of users",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "integer"},
+                    "username": {"type": "string"},
+                    "name": {"type": "string"},
+                    "email": {"type": "string"},
+                    "role": {"type": "string"}
+                  }
+                }
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "page": {"type": "integer"},
+                      "limit": {"type": "integer"},
+                      "totalItems": {"type": "integer"},
+                      "totalPages": {"type": "integer"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Authentication required"
+        },
+        "403": {
+          "description": "Insufficient permissions"
+        }
+      },
+      "requiresAuth": true
+    },
+    {
+      "path": "/{id}",
+      "method": "GET",
+      "description": "Get user by ID",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "integer",
+            "description": "User ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "User details",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "username": {"type": "string"},
+                  "name": {"type": "string"},
+                  "email": {"type": "string"},
+                  "role": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "User not found"
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/username/{username}",
+      "method": "GET",
+      "description": "Get user by username",
+      "parameters": {
+        "path": [
+          {
+            "name": "username",
+            "type": "string",
+            "description": "Username",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "User details",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "username": {"type": "string"},
+                  "name": {"type": "string"},
+                  "email": {"type": "string"},
+                  "role": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "User not found"
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/",
+      "method": "POST",
+      "description": "Create a new user",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "username": {
+              "type": "string",
+              "description": "Username (unique)",
+              "required": true
+            },
+            "password": {
+              "type": "string",
+              "description": "User password",
+              "required": true
+            },
+            "name": {
+              "type": "string",
+              "description": "Full name",
+              "required": true
+            },
+            "email": {
+              "type": "string",
+              "description": "Email address",
+              "required": true
+            },
+            "role": {
+              "type": "string",
+              "description": "User role (user, developer, admin)",
+              "required": false,
+              "default": "user"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "User created successfully",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "username": {"type": "string"},
+                  "name": {"type": "string"},
+                  "email": {"type": "string"},
+                  "role": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid user data"
+        },
+        "409": {
+          "description": "Username already exists"
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/me",
+      "method": "GET",
+      "description": "Get current authenticated user's profile",
+      "responses": {
+        "200": {
+          "description": "Current user details",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "username": {"type": "string"},
+                  "name": {"type": "string"},
+                  "email": {"type": "string"},
+                  "role": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Authentication required"
+        }
+      },
+      "requiresAuth": true
+    },
+    {
+      "path": "/{userId}/fibonacci-stats",
+      "method": "GET",
+      "description": "Get user's Fibonacci trust statistics",
+      "parameters": {
+        "path": [
+          {
+            "name": "userId",
+            "type": "integer",
+            "description": "User ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "User's Fibonacci trust statistics",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "currentLevel": {"type": "integer"},
+                  "currentScore": {"type": "number"},
+                  "nextLevelScore": {"type": "number"},
+                  "progressToNextLevel": {"type": "number"},
+                  "lastUpdated": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Trust score not found"
+        }
+      },
+      "requiresAuth": false
+    }
+  ]
+}

@@ -1,0 +1,283 @@
+{
+  "title": "NFT API Documentation",
+  "description": "API endpoints for managing NFT identity cards in the FibonroseTrust system",
+  "version": "1.0.0",
+  "baseUrl": "/api/v1/nfts",
+  "endpoints": [
+    {
+      "path": "/{id}",
+      "method": "GET",
+      "description": "Get NFT by ID",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "string",
+            "description": "NFT ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "NFT details",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "string"},
+                  "status": {"type": "string", "enum": ["MINTING", "MINTED", "FAILED", "EXPIRED"]},
+                  "type": {"type": "string", "enum": ["ID_CARD", "VERIFICATION_BADGE", "TRUST_CERTIFICATE"]},
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "name": {"type": "string"},
+                      "description": {"type": "string"},
+                      "image": {"type": "string"},
+                      "attributes": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "trait_type": {"type": "string"},
+                            "value": {"type": "string"}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "NFT not found"
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/user/{userId}",
+      "method": "GET",
+      "description": "Get NFTs for a user",
+      "parameters": {
+        "path": [
+          {
+            "name": "userId",
+            "type": "integer",
+            "description": "User ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "List of user's NFTs",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "string"},
+                    "type": {"type": "string"},
+                    "status": {"type": "string"},
+                    "createdAt": {"type": "string", "format": "date-time"},
+                    "mintedAt": {"type": "string", "format": "date-time"},
+                    "blockchain": {"type": "string"},
+                    "contractAddress": {"type": "string"},
+                    "tokenId": {"type": "string"},
+                    "metadataUrl": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "User not found"
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/verification",
+      "method": "POST",
+      "description": "Create a new NFT verification",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "userId": {
+              "type": "integer",
+              "description": "User ID",
+              "required": true
+            },
+            "walletAddress": {
+              "type": "string",
+              "description": "Blockchain wallet address",
+              "required": true
+            },
+            "nftType": {
+              "type": "string",
+              "description": "Type of NFT to create",
+              "enum": ["ID_CARD", "VERIFICATION_BADGE", "TRUST_CERTIFICATE"],
+              "required": true
+            },
+            "metadata": {
+              "type": "object",
+              "description": "Additional metadata for the NFT",
+              "required": false
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "NFT created successfully",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "string"},
+                  "userId": {"type": "integer"},
+                  "walletAddress": {"type": "string"},
+                  "type": {"type": "string"},
+                  "status": {"type": "string"},
+                  "createdAt": {"type": "string", "format": "date-time"},
+                  "mintedAt": {"type": "string", "format": "date-time"},
+                  "metadataUrl": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid NFT data"
+        },
+        "403": {
+          "description": "Insufficient trust level or missing required verifications"
+        },
+        "404": {
+          "description": "User not found"
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/{id}/metadata",
+      "method": "GET",
+      "description": "Get NFT card metadata",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "string",
+            "description": "NFT ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "NFT metadata",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "description": {"type": "string"},
+                  "image": {"type": "string"},
+                  "external_url": {"type": "string"},
+                  "attributes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "trait_type": {"type": "string"},
+                        "value": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "NFT not found"
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/{id}/verify",
+      "method": "GET",
+      "description": "Verify NFT authenticity",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "string",
+            "description": "NFT ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "NFT verification results",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "string"},
+                  "isValid": {"type": "boolean"},
+                  "verifiedAt": {"type": "string", "format": "date-time"},
+                  "verificationData": {
+                    "type": "object",
+                    "properties": {
+                      "blockchain": {"type": "string"},
+                      "contractAddress": {"type": "string"},
+                      "tokenId": {"type": "string"},
+                      "owner": {"type": "string"},
+                      "issuedBy": {"type": "string"},
+                      "issuedAt": {"type": "string", "format": "date-time"},
+                      "expiresAt": {"type": "string", "format": "date-time"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "NFT not found"
+        }
+      },
+      "requiresAuth": false
+    }
+  ]
+}
