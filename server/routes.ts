@@ -288,10 +288,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync('uploads');
   }
   
+  // Test Xano connection API
+  app.post('/api/xano/test-connection', async (req: Request, res: Response) => {
+    try {
+      const { apiKey, baseUrl } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'API key is required' 
+        });
+      }
+      
+      // Initialize Xano integration with the provided API key
+      XanoIntegration.setApiKey(apiKey);
+      
+      // Test the connection
+      const connectionSuccess = await XanoIntegration.testConnection();
+      
+      if (connectionSuccess) {
+        // Try to fetch some metadata to further validate the connection
+        try {
+          const metadata = await XanoIntegration.getApiMetadata();
+          
+          return res.status(200).json({ 
+            success: true,
+            message: 'Successfully connected to Xano API',
+            metadata
+          });
+        } catch (error) {
+          // Connection successful but couldn't get metadata
+          return res.status(200).json({ 
+            success: true,
+            message: 'Connected to Xano API, but metadata retrieval failed'
+          });
+        }
+      } else {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Failed to connect to Xano with the provided API key'
+        });
+      }
+    } catch (error) {
+      console.error('Error testing Xano connection:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Error testing Xano connection',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Configure Xano integration API
   app.post('/api/xano/configure', async (req: Request, res: Response) => {
     try {
-      const { apiKey, webhookSecret, baseUrl, userId } = req.body;
+      const { apiKey, webhookSecret, baseUrl, userId, aiEnabled } = req.body;
       
       if (!apiKey) {
         return res.status(400).json({ message: 'API key is required' });
@@ -314,7 +365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         baseUrl: baseUrl || 'https://x8ki-letl-twmt.n7.xano.io',
         webhookSecret: webhookSecret || '',
         isActive: true,
-        aiEnabled: false
+        aiEnabled: aiEnabled || false
       });
       
       res.status(201).json({
@@ -323,7 +374,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: integration.id,
           userId: integration.userId,
           baseUrl: integration.baseUrl,
-          isActive: integration.isActive
+          isActive: integration.isActive,
+          aiEnabled: integration.aiEnabled
         }
       });
     } catch (error) {

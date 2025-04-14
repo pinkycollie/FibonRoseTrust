@@ -14,6 +14,7 @@ const navItems: NavItem[] = [
   { href: "/nft-authentication", label: "NFT Authentication", icon: "token" },
   { href: "/verification-history", label: "Verification History", icon: "history" },
   { href: "/api-integrations", label: "API Integrations", icon: "api" },
+  { href: "/webhooks", label: "Webhooks", icon: "webhook" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
