@@ -119,20 +119,38 @@ export class XanoIntegration {
     const xanoHmac = headers['x-xano-hmac'];
     const xanoInstance = headers['x-xano-source'] || 'x8ki-letl-twmt.n7.xano.io';
     
-    log(`Processing Xano webhook: ${xanoEvent} from ${xanoInstance}`, 'xano');
+    // Check if this is a PinkSync webhook coming through Xano
+    const isPinkSync = 
+      payload.source === 'pinksync' || 
+      (payload.metadata && payload.metadata.source === 'pinksync') ||
+      (payload.data && payload.data.source === 'pinksync') ||
+      headers['x-pinksync-signature'] !== undefined;
+    
+    let eventType = xanoEvent;
+    let source = 'xano';
+    
+    if (isPinkSync) {
+      // Override with PinkSync-specific information
+      eventType = payload.event || payload.action || payload.event_type || 'pinksync.event';
+      source = 'pinksync';
+      log(`Processing PinkSync webhook via Xano: ${eventType}`, 'pinksync');
+    } else {
+      log(`Processing Xano webhook: ${xanoEvent} from ${xanoInstance}`, 'xano');
+    }
     
     // Normalize the webhook data
     return {
-      source: 'xano',
-      eventType: xanoEvent,
+      source: source,
+      eventType: eventType,
       timestamp: payload.timestamp || new Date().toISOString(),
       sourceInstance: xanoInstance,
       payload: {
         ...payload,
         _meta: {
           instance: xanoInstance,
-          eventType: xanoEvent,
-          hmacProvided: !!xanoHmac
+          eventType: eventType,
+          hmacProvided: !!xanoHmac,
+          isPinkSync: isPinkSync
         }
       }
     };

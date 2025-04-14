@@ -665,6 +665,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // NegraRosa Security WHY Verification
+  app.post('/api/security/why-verification', async (req: Request, res: Response) => {
+    const { userId, verificationType } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+    
+    try {
+      // In a real implementation, this would call the NegraRosa API
+      // For now, we'll simulate a successful response
+      const securityLevels = ['low', 'standard', 'enhanced', 'maximum'];
+      const randomLevel = securityLevels[Math.floor(Math.random() * securityLevels.length)];
+      
+      setTimeout(() => {
+        // This would be an async operation that updates the user's security status
+      }, 100);
+      
+      res.status(200).json({
+        success: true,
+        userId,
+        verificationType: verificationType || 'identity',
+        securityLevel: randomLevel,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error performing WHY verification:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to perform WHY verification',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // NegraRosa Security Risk Assessment
+  app.post('/api/security/risk-assessment', async (req: Request, res: Response) => {
+    const { userId, transactionType, metadata } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+    
+    try {
+      // In a real implementation, this would call the NegraRosa API
+      // For now, we'll simulate a successful risk assessment
+      const riskLevel = metadata?.trustScore > 5 ? 'low' : 'moderate';
+      const maxTransactionAmount = metadata?.trustScore * 1000;
+      
+      res.status(200).json({
+        success: true,
+        userId,
+        riskLevel,
+        transactionType: transactionType || 'general',
+        recommendations: [
+          'Maintain regular verification updates',
+          'Consider additional identity verification'
+        ],
+        limits: {
+          maxTransactionAmount,
+          dailyLimit: maxTransactionAmount * 3,
+          monthlyLimit: maxTransactionAmount * 30
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error performing risk assessment:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to perform risk assessment',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Universal webhook endpoint that supports any source
   app.post('/api/webhook/:source', async (req: Request, res: Response) => {
     const source = req.params.source;
