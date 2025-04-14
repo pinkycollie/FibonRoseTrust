@@ -2,62 +2,100 @@ import { Link, useLocation } from "wouter";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState, useEffect } from "react";
+
+type UserRole = 'user' | 'developer' | 'admin';
 
 type NavItem = {
   href: string;
   label: string;
   icon: string;
   description?: string;
+  roles?: UserRole[];
 };
 
-const navItems: NavItem[] = [
+// Items accessible to all users
+const userNavItems: NavItem[] = [
   { 
     href: "/", 
     label: "Dashboard", 
     icon: "dashboard",
-    description: "Your verification overview" 
+    description: "Your verification overview",
+    roles: ['user', 'developer', 'admin']
   },
   { 
     href: "/verifications", 
     label: "Verify", 
     icon: "security",
-    description: "Complete identity verification" 
+    description: "Complete identity verification",
+    roles: ['user', 'developer', 'admin']
   },
   { 
     href: "/nft-authentication", 
     label: "NFT", 
     icon: "token",
-    description: "NFT-based authentication" 
+    description: "NFT-based authentication",
+    roles: ['user', 'developer', 'admin']
   },
   { 
     href: "/verification-history", 
     label: "History", 
     icon: "history",
-    description: "View verification history" 
-  },
-  { 
-    href: "/api-integrations", 
-    label: "API", 
-    icon: "api",
-    description: "Manage API integrations" 
-  },
-  { 
-    href: "/webhooks", 
-    label: "Hooks", 
-    icon: "webhook",
-    description: "Set up webhook endpoints" 
+    description: "View verification history",
+    roles: ['user', 'developer', 'admin']
   },
   { 
     href: "/settings", 
     label: "Settings", 
     icon: "settings",
-    description: "Configure your account" 
+    description: "Configure your account",
+    roles: ['user', 'developer', 'admin']
+  },
+];
+
+// Developer and admin only items
+const developerNavItems: NavItem[] = [
+  { 
+    href: "/api-integrations", 
+    label: "API", 
+    icon: "api",
+    description: "Manage API integrations",
+    roles: ['developer', 'admin']
+  },
+  { 
+    href: "/webhooks", 
+    label: "Hooks", 
+    icon: "webhook",
+    description: "Set up webhook endpoints",
+    roles: ['developer', 'admin']
   },
 ];
 
 export function Sidebar() {
   const [location] = useLocation();
   const { isSidebarOpen, closeSidebar } = useSidebar();
+  const [userRole, setUserRole] = useState<UserRole>('user');
+  
+  // For demo purposes - would be fetched from authentication context in real app
+  useEffect(() => {
+    // Simulate fetching user role from API/auth context
+    const hasDevPermission = sessionStorage.getItem('devMode') === 'true';
+    setUserRole(hasDevPermission ? 'developer' : 'user');
+  }, []);
+  
+  // Filter navigation items based on user role
+  const getNavItems = () => {
+    const allItems = [...userNavItems];
+    
+    // Only add developer items if user has permission
+    if (userRole === 'developer' || userRole === 'admin') {
+      allItems.push(...developerNavItems);
+    }
+    
+    return allItems;
+  };
+
+  const navItems = getNavItems();
 
   return (
     <div 
@@ -85,36 +123,38 @@ export function Sidebar() {
               {navItems.map((item) => (
                 <Tooltip key={item.href}>
                   <TooltipTrigger asChild>
-                    <Link 
-                      href={item.href}
-                      onClick={() => {
-                        if (isSidebarOpen) closeSidebar();
-                      }}
-                    >
-                      <a 
-                        className={cn(
-                          "flex flex-col items-center justify-center p-3 rounded-xl transition-all hover:scale-105",
-                          location === item.href 
-                            ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-100" 
-                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                        )}
-                      >
-                        <span 
+                    <div onClick={() => { if (isSidebarOpen) closeSidebar(); }}>
+                      <Link href={item.href}>
+                        <div 
                           className={cn(
-                            "material-icons text-2xl mb-1",
+                            "flex flex-col items-center justify-center p-3 rounded-xl transition-all hover:scale-105 cursor-pointer",
                             location === item.href 
-                              ? "text-primary-500" 
-                              : "text-gray-500"
+                              ? "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-100" 
+                              : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                           )}
                         >
-                          {item.icon}
-                        </span>
-                        <span className="text-xs font-medium">{item.label}</span>
-                      </a>
-                    </Link>
+                          <span 
+                            className={cn(
+                              "material-icons text-2xl mb-1",
+                              location === item.href 
+                                ? "text-primary-500" 
+                                : "text-gray-500"
+                            )}
+                          >
+                            {item.icon}
+                          </span>
+                          <span className="text-xs font-medium">{item.label}</span>
+                        </div>
+                      </Link>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent side="right">
-                    <p>{item.description}</p>
+                    <div>
+                      <p>{item.description}</p>
+                      {item.roles && item.roles.includes('developer') && !item.roles.includes('user') && (
+                        <p className="text-xs text-orange-500 mt-1">Developer access required</p>
+                      )}
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               ))}
@@ -125,22 +165,42 @@ export function Sidebar() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex flex-col items-center cursor-pointer hover:opacity-80">
+                <div 
+                  className="flex flex-col items-center cursor-pointer hover:opacity-80"
+                  onClick={() => {
+                    // Toggle dev mode for testing
+                    const isDevMode = sessionStorage.getItem('devMode') === 'true';
+                    sessionStorage.setItem('devMode', isDevMode ? 'false' : 'true');
+                    setUserRole(isDevMode ? 'user' : 'developer');
+                  }}
+                >
                   <div className="relative">
                     <img 
-                      className="h-10 w-10 rounded-full object-cover border-2 border-primary-500" 
+                      className={`h-10 w-10 rounded-full object-cover border-2 ${
+                        userRole === 'developer' ? 'border-yellow-500' : 'border-primary-500'
+                      }`}
                       src="https://images.unsplash.com/photo-1502378735452-bc7d86632805?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=200&fit=max&s=aa3a807e1bbdfd4364d1f449eaa96d82" 
                       alt="User avatar" 
                     />
                     <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>
                   </div>
-                  <span className="material-icons text-xs mt-1 text-primary-500">account_circle</span>
+                  <div className="flex items-center mt-1">
+                    <span className="material-icons text-xs text-primary-500 mr-1">account_circle</span>
+                    {userRole === 'developer' && (
+                      <span className="material-icons text-xs text-yellow-500">code</span>
+                    )}
+                  </div>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="right">
                 <div>
                   <p className="font-medium">Jane Cooper</p>
-                  <p className="text-xs text-gray-500">Level 3 Verified</p>
+                  <p className="text-xs text-gray-500">
+                    {userRole === 'developer' 
+                      ? 'Developer Access • Level 3 Verified' 
+                      : 'Level 3 Verified'}
+                  </p>
+                  <p className="text-xs text-primary-500 mt-1">Click to toggle access level</p>
                 </div>
               </TooltipContent>
             </Tooltip>
