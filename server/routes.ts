@@ -16,6 +16,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { WebhookService } from './services/webhook';
 import { XanoIntegration } from './services/integrations/xano';
+import { universalWebhookManager } from './services/universal-webhook';
 
 // Configure multer for file uploads
 const upload = multer({
@@ -424,6 +425,246 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Webhook subscription management endpoints
+  
+  // List all webhook subscriptions
+  app.get('/api/webhook/subscriptions', async (_req: Request, res: Response) => {
+    try {
+      const subscriptions = await storage.getWebhookSubscriptions();
+      res.status(200).json(subscriptions);
+    } catch (error) {
+      console.error('Error fetching webhook subscriptions:', error);
+      res.status(500).json({ 
+        message: 'Failed to fetch webhook subscriptions', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Get a specific webhook subscription
+  app.get('/api/webhook/subscriptions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid webhook subscription ID' });
+      }
+      
+      const subscription = await storage.getWebhookSubscription(id);
+      if (!subscription) {
+        return res.status(404).json({ message: 'Webhook subscription not found' });
+      }
+      
+      res.status(200).json(subscription);
+    } catch (error) {
+      console.error('Error fetching webhook subscription:', error);
+      res.status(500).json({ 
+        message: 'Failed to fetch webhook subscription', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Create a new webhook subscription
+  app.post('/api/webhook/subscriptions', async (req: Request, res: Response) => {
+    try {
+      const { name, url, events, secret, isActive } = req.body;
+      
+      if (!name || !url || !events || !Array.isArray(events)) {
+        return res.status(400).json({ message: 'Name, URL, and events are required' });
+      }
+      
+      const newSubscription = await storage.createWebhookSubscription({
+        name,
+        url,
+        events,
+        secret: secret || '',
+        isActive: isActive !== undefined ? isActive : true,
+        partnerId: null,
+        headers: {}
+      });
+      
+      res.status(201).json(newSubscription);
+    } catch (error) {
+      console.error('Error creating webhook subscription:', error);
+      res.status(500).json({ 
+        message: 'Failed to create webhook subscription', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Update a webhook subscription
+  app.patch('/api/webhook/subscriptions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid webhook subscription ID' });
+      }
+      
+      const subscription = await storage.getWebhookSubscription(id);
+      if (!subscription) {
+        return res.status(404).json({ message: 'Webhook subscription not found' });
+      }
+      
+      const updatedSubscription = await storage.updateWebhookSubscription(id, req.body);
+      res.status(200).json(updatedSubscription);
+    } catch (error) {
+      console.error('Error updating webhook subscription:', error);
+      res.status(500).json({ 
+        message: 'Failed to update webhook subscription', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Delete a webhook subscription
+  app.delete('/api/webhook/subscriptions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid webhook subscription ID' });
+      }
+      
+      const success = await storage.deleteWebhookSubscription(id);
+      if (!success) {
+        return res.status(404).json({ message: 'Webhook subscription not found' });
+      }
+      
+      res.status(200).json({ message: 'Webhook subscription deleted' });
+    } catch (error) {
+      console.error('Error deleting webhook subscription:', error);
+      res.status(500).json({ 
+        message: 'Failed to delete webhook subscription', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Test a webhook subscription by sending a test event
+  app.post('/api/webhook/subscriptions/:id/test', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid webhook subscription ID' });
+      }
+      
+      const subscription = await storage.getWebhookSubscription(id);
+      if (!subscription) {
+        return res.status(404).json({ message: 'Webhook subscription not found' });
+      }
+      
+      // Send a test event through the webhook service
+      const delivery = await universalWebhookManager.testWebhook(
+        id,
+        EventTypes.VERIFICATION_CREATED,
+        {
+          event: EventTypes.VERIFICATION_CREATED,
+          timestamp: new Date().toISOString(),
+          data: {
+            message: 'This is a test event from FibonroseTrust',
+            subscription: { id: subscription.id, name: subscription.name }
+          }
+        }
+      );
+      
+      res.status(200).json({ 
+        message: 'Test event sent', 
+        deliveryId: delivery.id,
+        status: delivery.status
+      });
+    } catch (error) {
+      console.error('Error testing webhook:', error);
+      res.status(500).json({ 
+        message: 'Failed to test webhook', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // List webhook deliveries
+  app.get('/api/webhook/deliveries', async (req: Request, res: Response) => {
+    try {
+      const subscriptionId = req.query.subscriptionId ? parseInt(req.query.subscriptionId as string) : undefined;
+      const deliveries = await storage.getWebhookDeliveries(subscriptionId);
+      res.status(200).json(deliveries);
+    } catch (error) {
+      console.error('Error fetching webhook deliveries:', error);
+      res.status(500).json({ 
+        message: 'Failed to fetch webhook deliveries', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Get a specific webhook delivery
+  app.get('/api/webhook/deliveries/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid webhook delivery ID' });
+      }
+      
+      const delivery = await storage.getWebhookDelivery(id);
+      if (!delivery) {
+        return res.status(404).json({ message: 'Webhook delivery not found' });
+      }
+      
+      res.status(200).json(delivery);
+    } catch (error) {
+      console.error('Error fetching webhook delivery:', error);
+      res.status(500).json({ 
+        message: 'Failed to fetch webhook delivery', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Import webhooks from CSV
+  app.post('/api/webhook/import', upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+      
+      const file = req.file;
+      const fileBuffer = file.buffer;
+      
+      const count = await universalWebhookManager.importWebhooks(fileBuffer);
+      res.status(200).json({ message: 'Webhooks imported', count });
+    } catch (error) {
+      console.error('Error importing webhooks:', error);
+      res.status(500).json({ 
+        message: 'Failed to import webhooks', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Export webhooks to CSV
+  app.get('/api/webhook/export', async (_req: Request, res: Response) => {
+    try {
+      const filePath = await universalWebhookManager.exportWebhooks();
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=webhook-subscriptions-${Date.now()}.csv`);
+      
+      // Stream the file to the response
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+      
+      // Clean up the file after sending
+      fileStream.on('end', () => {
+        fs.unlinkSync(filePath);
+      });
+    } catch (error) {
+      console.error('Error exporting webhooks:', error);
+      res.status(500).json({ 
+        message: 'Failed to export webhooks', 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
   // Universal webhook endpoint that supports any source
   app.post('/api/webhook/:source', async (req: Request, res: Response) => {
     const source = req.params.source;
@@ -433,7 +674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      const delivery = await WebhookService.processIncomingWebhook(
+      const delivery = await universalWebhookManager.processUniversalWebhook(
         source,
         req.body,
         req.headers as Record<string, string>
