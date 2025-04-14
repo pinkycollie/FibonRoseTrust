@@ -173,25 +173,67 @@ export const EventTypes = {
   // Generic event
   GENERIC: 'generic.event',
   
-  // Verification events
+  // Identity Verification Layer events
+  VERIFICATION_INITIATED: 'verification.initiated',
   VERIFICATION_CREATED: 'verification.created',
   VERIFICATION_UPDATED: 'verification.updated',
   VERIFICATION_VERIFIED: 'verification.verified',
   VERIFICATION_REJECTED: 'verification.rejected',
+  VERIFICATION_STEP_COMPLETED: 'verification.step_completed',
+  
+  // Neural Network Processing events
+  NEURAL_RISK_ASSESSMENT_STARTED: 'neural.risk_assessment_started',
+  NEURAL_RISK_ASSESSMENT_COMPLETED: 'neural.risk_assessment_completed',
+  NEURAL_ANOMALY_DETECTED: 'neural.anomaly_detected',
+  
+  // Decentralized Database events
+  DB_DATA_STORED: 'db.data_stored',
+  DB_DATA_UPDATED: 'db.data_updated',
+  DB_DATA_ACCESSED: 'db.data_accessed',
+  DB_DATA_DELETED: 'db.data_deleted',
+  
+  // Credential Validation events
+  CREDENTIAL_VALIDATION_STARTED: 'credential.validation_started',
+  CREDENTIAL_VALIDATION_COMPLETED: 'credential.validation_completed',
+  CREDENTIAL_ISSUED: 'credential.issued',
+  CREDENTIAL_REVOKED: 'credential.revoked',
+  
+  // Access Rights Management events
+  ACCESS_GRANTED: 'access.granted',
+  ACCESS_DENIED: 'access.denied',
+  ACCESS_REVOKED: 'access.revoked',
+  PERMISSION_LEVEL_CHANGED: 'permission.level_changed',
   
   // User events
   TRUST_SCORE_UPDATED: 'trust_score.updated',
   USER_CREATED: 'user.created',
   USER_UPDATED: 'user.updated',
   
-  // NFT events
+  // NFT & Blockchain events
   NFT_MINTED: 'nft.minted',
   NFT_TRANSFERRED: 'nft.transferred',
+  WALLET_CONNECTED: 'wallet.connected',
+  WALLET_DISCONNECTED: 'wallet.disconnected',
+  
+  // Civic Pass specific events
+  CIVIC_PASS_VERIFIED: 'civic.pass_verified',
+  CIVIC_PASS_EXPIRED: 'civic.pass_expired',
+  CIVIC_PASS_REVOKED: 'civic.pass_revoked',
+  
+  // NegraRosa Security Framework events
+  SECURITY_WHY_SUBMITTED: 'security.why_submitted',
+  SECURITY_WHY_VERIFIED: 'security.why_verified',
+  SECURITY_RISK_ASSESSED: 'security.risk_assessed',
   
   // Xano integration events
   XANO_ANALYSIS_COMPLETED: 'xano.analysis.completed',
   XANO_DATA_SYNCED: 'xano.data.synced',
-  XANO_AI_INSIGHT: 'xano.ai.insight'
+  XANO_AI_INSIGHT: 'xano.ai.insight',
+  XANO_METADATA_UPDATED: 'xano.metadata.updated',
+  
+  // PinkSync events
+  PINKSYNC_WEBHOOK_RECEIVED: 'pinksync.webhook_received',
+  PINKSYNC_TRIGGER_ACTIVATED: 'pinksync.trigger_activated'
 } as const;
 
 export type EventType = typeof EventTypes[keyof typeof EventTypes];
