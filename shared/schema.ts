@@ -72,12 +72,16 @@ export const webhookDeliveries = pgTable("webhook_deliveries", {
   id: serial("id").primaryKey(), 
   subscriptionId: integer("subscription_id").notNull().references(() => webhookSubscriptions.id),
   eventType: text("event_type").notNull(),
+  source: text("source"),
   payload: jsonb("payload").notNull(),
-  status: text("status").notNull(), // 'success', 'failed', 'pending'
+  status: text("status").notNull(), // 'PENDING', 'DELIVERED', 'FAILED', 'RECEIVED'
   statusCode: integer("status_code"),
   response: text("response"),
   errorMessage: text("error_message"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  requestHeaders: text("request_headers"),
+  requestPayload: text("request_payload"),
+  responseBody: text("response_body"),
   processedAt: timestamp("processed_at"),
   attempts: integer("attempts").notNull().default(0)
 });
@@ -132,11 +136,12 @@ export const insertWebhookSubscriptionSchema = createInsertSchema(webhookSubscri
   createdAt: true 
 });
 
-export const insertWebhookDeliverySchema = createInsertSchema(webhookDeliveries).omit({ 
-  createdAt: true, 
-  processedAt: true, 
-  attempts: true 
-});
+export const insertWebhookDeliverySchema = createInsertSchema(webhookDeliveries)
+  .omit({ 
+    createdAt: true, 
+    processedAt: true, 
+    attempts: true 
+  });
 
 export const insertNotionIntegrationSchema = createInsertSchema(notionIntegrations).omit({
   lastSynced: true

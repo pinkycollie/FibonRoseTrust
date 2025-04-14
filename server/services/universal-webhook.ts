@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as csv from 'fast-csv';
 import { log } from '../vite';
+import * as crypto from 'crypto';
 
 interface WebhookResult {
   success: boolean;
@@ -89,14 +90,14 @@ class UniversalWebhookManager {
       
       // Create a webhook delivery record
       const delivery = await storage.createWebhookDelivery({
-        source,
+        subscriptionId: 1, // Default subscription ID
         eventType: normalizedData.eventType,
         status: 'RECEIVED',
+        payload: payload, // Required field
         requestHeaders: JSON.stringify(headers),
-        requestPayload: JSON.stringify(payload),
-        responseStatus: null,
-        responseBody: null,
-        error: null
+        statusCode: null,
+        response: null,
+        errorMessage: null
       });
       
       // Return successful result
@@ -213,10 +214,158 @@ class UniversalWebhookManager {
    * @returns HMAC signature
    */
   private generateSignature(payload: string, secret: string): string {
-    const crypto = require('crypto');
     const hmac = crypto.createHmac('sha256', secret);
     hmac.update(payload);
     return hmac.digest('hex');
+  }
+  
+  /**
+   * Process an event from the identity framework event bus
+   * This method is the key integration point between the event bus and webhook system
+   * @param source Source of the event (e.g., 'identity_verification', 'neural_network')
+   * @param eventType Type of event (from EventTypes enum)
+   * @param payload Event data
+   */
+  public async processEvent(
+    source: string,
+    eventType: EventType,
+    payload: any
+  ): Promise<void> {
+    log(`Processing event from ${source}: ${eventType}`, 'webhook');
+    
+    try {
+      // Find all active subscriptions that listen for this event type
+      const subscriptions = await storage.getWebhookSubscriptions();
+      const matchingSubscriptions = subscriptions.filter(sub => 
+        sub.isActive && (sub.events.includes(eventType) || sub.events.includes('*'))
+      );
+      
+      if (matchingSubscriptions.length === 0) {
+        log(`No active subscriptions found for event ${eventType}`, 'webhook');
+        return;
+      }
+      
+      // Process each matching subscription
+      for (const subscription of matchingSubscriptions) {
+        try {
+          // Create delivery record 
+          const payloadJson = typeof payload === 'string' ? payload : JSON.stringify(payload);
+          const delivery = await storage.createWebhookDelivery({
+            subscriptionId: subscription.id,
+            eventType,
+            status: 'PENDING',
+            payload: payloadJson
+          });
+          
+          // Update source separately if storage API doesn't directly support it
+          await storage.updateWebhookDeliveryStatus(
+            delivery.id,
+            'PENDING',
+            null,
+            null,
+            null
+          );
+          
+          // Apply trust-based filtering if userId is present in payload
+          let filteredPayload = payload;
+          if (payload.userId) {
+            filteredPayload = await this.applyTrustBasedFiltering(payload, subscription);
+          }
+          
+          // Deliver the webhook
+          await this.deliverWebhook(delivery.id, subscription, {
+            id: delivery.id,
+            source,
+            eventType,
+            timestamp: new Date().toISOString(),
+            data: filteredPayload
+          });
+        } catch (error) {
+          log(`Error processing webhook for subscription ${subscription.id}: ${error instanceof Error ? error.message : String(error)}`, 'webhook');
+        }
+      }
+    } catch (error) {
+      log(`Error processing event ${eventType}: ${error instanceof Error ? error.message : String(error)}`, 'webhook');
+    }
+  }
+  
+  /**
+   * Apply trust-based filtering to webhook payload based on Fibonacci trust levels
+   * @param payload Original payload
+   * @param subscription Webhook subscription
+   * @returns Filtered payload
+   */
+  private async applyTrustBasedFiltering(
+    payload: any,
+    subscription: WebhookSubscription
+  ): Promise<any> {
+    if (!payload.userId) {
+      return payload; // No userId to lookup trust score
+    }
+    
+    try {
+      // Get trust score for user
+      const trustScore = await storage.getTrustScore(payload.userId);
+      if (!trustScore) {
+        return this.filterSensitiveData(payload, 0); // No trust score found, apply maximum filtering
+      }
+      
+      // Apply filtering based on Fibonacci trust level
+      return this.filterSensitiveData(payload, trustScore.level);
+    } catch (error) {
+      log(`Error applying trust-based filtering: ${error instanceof Error ? error.message : String(error)}`, 'webhook');
+      return this.filterSensitiveData(payload, 0); // Error, apply maximum filtering
+    }
+  }
+  
+  /**
+   * Filter sensitive data based on trust level
+   * @param payload Original payload
+   * @param trustLevel Fibonacci trust level (0-21)
+   * @returns Filtered payload
+   */
+  private filterSensitiveData(payload: any, trustLevel: number): any {
+    const filteredPayload = { ...payload };
+    
+    // Trust level 1-3: Basic information only
+    if (trustLevel < 4) {
+      // Remove sensitive fields
+      delete filteredPayload.personalData;
+      delete filteredPayload.biometricResults;
+      delete filteredPayload.financialData;
+      delete filteredPayload.securityDetails;
+      delete filteredPayload.medicalInfo;
+      delete filteredPayload.detailedHistory;
+    }
+    // Trust level 4-7: Include more details but obscure some
+    else if (trustLevel < 8) {
+      // Keep personal data but obscure sensitive parts
+      if (filteredPayload.personalData) {
+        // Redact specific personal data fields
+        const redactedPersonalData = { ...filteredPayload.personalData };
+        if (redactedPersonalData.ssn) redactedPersonalData.ssn = '***-**-' + (redactedPersonalData.ssn.slice(-4) || '****');
+        if (redactedPersonalData.dob) redactedPersonalData.dob = '****-**-**';
+        if (redactedPersonalData.address) redactedPersonalData.address = '[REDACTED]';
+        filteredPayload.personalData = redactedPersonalData;
+      }
+      
+      // Remove highest sensitivity data
+      delete filteredPayload.biometricResults;
+      delete filteredPayload.financialData;
+    }
+    // Trust level 8-12: Access to most data with minimal redaction
+    else if (trustLevel < 13) {
+      // Keep most data but redact specific sensitive fields
+      if (filteredPayload.financialData) {
+        const redactedFinancialData = { ...filteredPayload.financialData };
+        if (redactedFinancialData.accountNumber) redactedFinancialData.accountNumber = '****' + (redactedFinancialData.accountNumber.slice(-4) || '****');
+        filteredPayload.financialData = redactedFinancialData;
+      }
+    }
+    // Trust level 13+: Full data access (Fibonacci levels continue growing)
+    // No filtering needed
+    
+    return filteredPayload;
   }
   
   /**
