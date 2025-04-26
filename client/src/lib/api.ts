@@ -31,7 +31,11 @@ export class FibonroseTrustApi {
   private apiVersion: string;
 
   constructor(baseUrl = '/api', apiVersion = 'v1') {
-    this.baseUrl = baseUrl;
+    // In production, check if we need to use the full domain
+    const isProd = process.env.NODE_ENV === 'production';
+    this.baseUrl = isProd && !baseUrl.startsWith('http') 
+      ? `https://fibonrose.mbtquniverse.com${baseUrl}`
+      : baseUrl;
     this.apiVersion = apiVersion;
     
     this.client = axios.create({
@@ -39,7 +43,8 @@ export class FibonroseTrustApi {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-      }
+      },
+      withCredentials: true // Send cookies in cross-origin requests
     });
     
     // Add response interceptor for standardized error handling
