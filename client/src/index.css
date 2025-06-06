@@ -2,6 +2,101 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-first responsive utilities */
+@layer base {
+  html {
+    /* Prevent zoom on input focus on iOS */
+    -webkit-text-size-adjust: 100%;
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    /* Improve touch scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
+    /* Better font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Better touch targets */
+  button, 
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better focus indicators for mobile */
+  @media (max-width: 768px) {
+    :focus {
+      outline: 2px solid hsl(var(--primary));
+      outline-offset: 2px;
+    }
+  }
+}
+
+@layer components {
+  /* Mobile-optimized card component */
+  .mobile-card {
+    @apply rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm;
+    @apply p-4 sm:p-6;
+  }
+  
+  /* Touch-friendly button sizes */
+  .btn-touch {
+    @apply min-h-[44px] px-4 py-2 text-sm font-medium rounded-lg;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply active:scale-95 transition-transform duration-150;
+  }
+  
+  /* Mobile navigation item */
+  .nav-item-mobile {
+    @apply flex items-center p-3 rounded-xl transition-all cursor-pointer;
+    @apply hover:scale-[1.02] active:scale-[0.98];
+    @apply min-h-[56px]; /* Ensure touch-friendly size */
+  }
+  
+  /* Responsive grid utilities */
+  .grid-responsive {
+    @apply grid gap-4;
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  .grid-responsive-2 {
+    @apply grid gap-4;
+    @apply grid-cols-1 lg:grid-cols-2;
+  }
+  
+  /* Mobile-friendly form inputs */
+  .input-mobile {
+    @apply w-full px-3 py-3 text-base border border-gray-300 dark:border-gray-600;
+    @apply rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+    @apply bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
+    /* Prevent zoom on iOS */
+    font-size: 16px;
+  }
+  
+  /* Fibonacci progress circle */
+  .fibonacci-progress {
+    background: conic-gradient(
+      hsl(var(--primary)) calc(var(--percentage) * 1%),
+      hsl(var(--muted)) 0
+    );
+    border-radius: 50%;
+    position: relative;
+  }
+  
+  .fibonacci-progress::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    background: hsl(var(--background));
+    border-radius: 50%;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

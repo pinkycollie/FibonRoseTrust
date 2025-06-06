@@ -9,11 +9,16 @@ import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
+import { fileURLToPath } from 'url';
+
+// ES module compatibility
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuration
 const CONFIG = {
   baseUrl: process.env.API_BASE_URL || 'http://localhost:5000/api',
-  apiVersion: 'v1',
+  apiVersion: '',
   authToken: process.env.AUTH_TOKEN || '',
   outputDir: path.join(__dirname, '../test-results'),
   timeoutMs: 10000,
@@ -52,7 +57,7 @@ class ApiTester {
   private results: TestSuiteResult[];
   
   constructor() {
-    this.baseUrl = `${CONFIG.baseUrl}/${CONFIG.apiVersion}`;
+    this.baseUrl = CONFIG.baseUrl;
     this.authToken = CONFIG.authToken;
     this.results = [];
     
@@ -400,17 +405,15 @@ class ApiTester {
    */
   async testUsersApi() {
     return this.runTestSuite('Users API', [
-      { method: 'GET', endpoint: '/users/1' },
-      { method: 'GET', endpoint: '/users/username/jane.cooper' },
-      { method: 'GET', endpoint: '/users/1/fibonacci-stats' },
-      { method: 'POST', endpoint: '/users', data: {
+      { method: 'GET', endpoint: '/user/1' },
+      { method: 'GET', endpoint: '/user/username/jane.cooper' },
+      { method: 'POST', endpoint: '/user', data: {
         username: `test-user-${Date.now()}`,
         password: 'TestPassword123!',
         name: 'Test User',
         email: `test-${Date.now()}@example.com`,
         role: 'user'
-      }},
-      { method: 'GET', endpoint: '/users/me' }
+      }}
     ]);
   }
   

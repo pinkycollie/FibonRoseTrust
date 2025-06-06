@@ -22,19 +22,21 @@ function Router() {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <div className="flex flex-col flex-1 w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header />
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/verifications" component={Verifications} />
-            <Route path="/nft-authentication" component={NftAuthentication} />
-            <Route path="/verification-history" component={VerificationHistoryPage} />
-            <Route path="/api-integrations" component={ApiIntegrations} />
-            <Route path="/webhooks" component={Webhooks} />
-            <Route path="/settings" component={Settings} />
-            <Route component={NotFound} />
-          </Switch>
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 max-w-7xl">
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/verifications" component={Verifications} />
+              <Route path="/nft-authentication" component={NftAuthentication} />
+              <Route path="/verification-history" component={VerificationHistoryPage} />
+              <Route path="/api-integrations" component={ApiIntegrations} />
+              <Route path="/webhooks" component={Webhooks} />
+              <Route path="/settings" component={Settings} />
+              <Route component={NotFound} />
+            </Switch>
+          </div>
         </main>
       </div>
       

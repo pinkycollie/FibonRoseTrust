@@ -70,21 +70,21 @@ export function TrustScoreOverview() {
             Verified
           </Badge>
         </div>
-        <div className="flex flex-col sm:flex-row justify-between items-center">
-          <div className="w-full sm:w-1/3 flex flex-col items-center mb-6 sm:mb-0">
-            <div className="relative w-32 h-32">
-              <div className="w-32 h-32 rounded-full fibonacci-progress" style={{ "--percentage": scorePercentage } as React.CSSProperties}></div>
+        <div className="flex flex-col lg:flex-row justify-between items-center">
+          <div className="w-full lg:w-1/3 flex flex-col items-center mb-6 lg:mb-0">
+            <div className="relative w-24 h-24 sm:w-32 sm:h-32">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full fibonacci-progress" style={{ "--percentage": scorePercentage } as React.CSSProperties}></div>
               <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
                 <div className="text-center">
-                  <span className="text-3xl font-bold text-primary-600 dark:text-primary-400">{trustScore.score}</span>
-                  <span className="block text-sm text-gray-500 dark:text-gray-400">of {trustScore.maxScore}</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-primary-600 dark:text-primary-400">{trustScore.score}</span>
+                  <span className="block text-xs sm:text-sm text-gray-500 dark:text-gray-400">of {trustScore.maxScore}</span>
                 </div>
               </div>
             </div>
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Fibonacci level: {trustScore.level}</p>
+            <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center">Fibonacci level: {trustScore.level}</p>
           </div>
-          <div className="w-full sm:w-2/3">
-            <div className="space-y-4">
+          <div className="w-full lg:w-2/3 lg:pl-6">
+            <div className="space-y-3 sm:space-y-4">
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Identity Verification</span>
