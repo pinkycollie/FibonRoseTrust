@@ -37,10 +37,10 @@ export function Header() {
         {/* Mobile title - visible only on small screens */}
         <div className="flex md:hidden flex-1 items-center justify-center">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
-              <span className="material-icons text-white text-lg">fingerprint</span>
+            <div className="w-7 h-7 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
+              <span className="material-icons text-white text-sm">fingerprint</span>
             </div>
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">FibonroseTrust</h1>
+            <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate">FibonroseTrust</h1>
           </div>
         </div>
         

@@ -10,6 +10,7 @@ import VerificationHistoryPage from "@/pages/VerificationHistoryPage";
 import ApiIntegrations from "@/pages/ApiIntegrations";
 import Settings from "@/pages/Settings";
 import Webhooks from "@/pages/Webhooks";
+import Web3Dashboard from "@/pages/Web3Dashboard";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useSidebar } from "./hooks/use-sidebar";
@@ -31,6 +32,7 @@ function Router() {
               <Route path="/verifications" component={Verifications} />
               <Route path="/nft-authentication" component={NftAuthentication} />
               <Route path="/verification-history" component={VerificationHistoryPage} />
+              <Route path="/web3" component={Web3Dashboard} />
               <Route path="/api-integrations" component={ApiIntegrations} />
               <Route path="/webhooks" component={Webhooks} />
               <Route path="/settings" component={Settings} />

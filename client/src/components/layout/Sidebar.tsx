@@ -31,6 +31,13 @@ const userNavItems: NavItem[] = [
     roles: ['user', 'developer', 'admin']
   },
   { 
+    href: "/web3", 
+    label: "Web3", 
+    icon: "currency_bitcoin",
+    description: "Blockchain verification & NFT",
+    roles: ['user', 'developer', 'admin']
+  },
+  { 
     href: "/nft-authentication", 
     label: "NFT", 
     icon: "token",
