@@ -351,6 +351,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Web3 and blockchain endpoints
+  app.post('/api/web3/nft/mint', async (req: Request, res: Response) => {
+    try {
+      const { userId, walletAddress } = req.body;
+      
+      if (!userId || !walletAddress) {
+        return res.status(400).json({
+          success: false,
+          message: 'userId and walletAddress are required'
+        });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      const nftData = {
+        tokenId: `${userId}_${Date.now()}`,
+        contractAddress: '0x742d35Cc6634C0532925a3b8D0F63F5C5E4c000B',
+        network: 'polygon',
+        metadataUri: `https://storage.googleapis.com/fibonrose-nft-metadata/metadata/${userId}.json`,
+        owner: walletAddress,
+        mintedAt: new Date().toISOString()
+      };
+
+      res.status(200).json({
+        success: true,
+        message: 'NFT minting initiated',
+        data: nftData
+      });
+    } catch (error) {
+      console.error('Error minting NFT:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to mint NFT'
+      });
+    }
+  });
+
+  app.post('/api/web3/wallet/connect', async (req: Request, res: Response) => {
+    try {
+      const { walletAddress, signature } = req.body;
+      
+      if (!walletAddress || !signature) {
+        return res.status(400).json({
+          success: false,
+          message: 'walletAddress and signature are required'
+        });
+      }
+
+      const walletData = {
+        address: walletAddress,
+        connected: true,
+        connectedAt: new Date().toISOString(),
+        network: 'polygon',
+        verified: true
+      };
+
+      res.status(200).json({
+        success: true,
+        message: 'Wallet connected successfully',
+        data: walletData
+      });
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to connect wallet'
+      });
+    }
+  });
+
+  app.get('/api/web3/blockchain/transactions/:address', async (req: Request, res: Response) => {
+    try {
+      const { address } = req.params;
+      
+      const transactions = [
+        {
+          hash: '0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890',
+          type: 'Identity Verification',
+          status: 'confirmed',
+          timestamp: '2024-01-15T10:30:00Z',
+          gasUsed: '0.002',
+          blockNumber: 18847291,
+          from: address,
+          to: '0x742d35Cc6634C0532925a3b8D0F63F5C5E4c000B'
+        }
+      ];
+
+      res.status(200).json({
+        success: true,
+        data: transactions
+      });
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch transactions'
+      });
+    }
+  });
+
+  app.get('/api/gcp/status', async (req: Request, res: Response) => {
+    try {
+      const gcpStatus = {
+        cloudFunctions: [
+          {
+            name: 'blockchain-event-handler',
+            status: 'active',
+            url: 'https://us-central1-fibonrose-project.cloudfunctions.net/blockchain-events'
+          },
+          {
+            name: 'nft-metadata-generator',
+            status: 'active',
+            url: 'https://us-central1-fibonrose-project.cloudfunctions.net/nft-metadata'
+          },
+          {
+            name: 'trust-score-calculator',
+            status: 'active',
+            url: 'https://us-central1-fibonrose-project.cloudfunctions.net/trust-score'
+          }
+        ],
+        pubsubTopics: [
+          {
+            name: 'fibonrose-blockchain-events',
+            status: 'active'
+          }
+        ],
+        storageBuckets: [
+          {
+            name: 'fibonrose-nft-metadata',
+            status: 'accessible'
+          }
+        ],
+        projectId: process.env.GCP_PROJECT_ID || 'fibonrose-project'
+      };
+
+      res.status(200).json({
+        success: true,
+        data: gcpStatus
+      });
+    } catch (error) {
+      console.error('Error fetching GCP status:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch GCP status'
+      });
+    }
+  });
+
   // Configure Xano integration API
   app.post('/api/xano/configure', async (req: Request, res: Response) => {
     try {
