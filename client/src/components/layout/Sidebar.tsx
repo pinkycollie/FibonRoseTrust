@@ -38,6 +38,13 @@ const userNavItems: NavItem[] = [
     roles: ['user', 'developer', 'admin']
   },
   { 
+    href: "/deaf-profile", 
+    label: "🤟🏽 Deaf", 
+    icon: "accessibility",
+    description: "Deaf community profile & hiring",
+    roles: ['user', 'developer', 'admin']
+  },
+  { 
     href: "/nft-authentication", 
     label: "NFT", 
     icon: "token",

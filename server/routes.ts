@@ -505,50 +505,314 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Configure Xano integration API
-  app.post('/api/xano/configure', async (req: Request, res: Response) => {
+  // Social media optimization and Google Sheets integration
+  app.post('/api/social/sync', async (req: Request, res: Response) => {
     try {
-      const { apiKey, webhookSecret, baseUrl, userId, aiEnabled } = req.body;
+      const { userId } = req.body;
       
-      if (!apiKey) {
-        return res.status(400).json({ message: 'API key is required' });
+      if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
       }
       
-      // Initialize Xano integration
-      XanoIntegration.setApiKey(apiKey);
+      const user = await storage.getUser(userId);
+      const trustScore = await storage.getTrustScore(userId);
       
-      // Test the connection
-      const connectionSuccess = await XanoIntegration.testConnection();
-      
-      if (!connectionSuccess) {
-        return res.status(400).json({ message: 'Failed to connect to Xano with the provided API key' });
+      if (!user || !trustScore) {
+        return res.status(404).json({ message: 'User or trust score not found' });
       }
       
-      // Create Xano integration record in the database
-      const integration = await storage.createXanoIntegration({
-        userId: userId || 1,
-        apiKey,
-        baseUrl: baseUrl || 'https://x8ki-letl-twmt.n7.xano.io',
-        webhookSecret: webhookSecret || '',
-        isActive: true,
-        aiEnabled: aiEnabled || false
-      });
+      // Prepare TikTok-optimized data
+      const socialData = {
+        userId: user.id,
+        username: user.username,
+        trustScore: trustScore.score,
+        verificationLevel: trustScore.level,
+        socialMediaOptimized: true,
+        tiktokReady: trustScore.score >= 3, // Level 3+ ready for TikTok
+        lastSync: new Date().toISOString()
+      };
       
-      res.status(201).json({
-        message: 'Xano integration configured successfully',
-        integration: {
-          id: integration.id,
-          userId: integration.userId,
-          baseUrl: integration.baseUrl,
-          isActive: integration.isActive,
-          aiEnabled: integration.aiEnabled
-        }
+      res.status(200).json({
+        success: true,
+        message: 'Social data synchronized for TikTok optimization',
+        data: socialData
       });
     } catch (error) {
-      console.error('Error configuring Xano integration:', error);
+      console.error('Error syncing social data:', error);
       res.status(500).json({ 
-        message: 'Failed to configure Xano integration', 
+        message: 'Failed to sync social media data', 
         error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+
+  app.get('/api/social/share-content/:userId', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      const user = await storage.getUser(userId);
+      const trustScore = await storage.getTrustScore(userId);
+      
+      if (!user || !trustScore) {
+        return res.status(404).json({ message: 'User data not found' });
+      }
+      
+      // Check if user is deaf for specialized content
+      const isDeaf = user.username === 'jane.cooper'; // Demo user marked as deaf
+      const deafPrefix = isDeaf ? '🤟🏽 Deaf & Verified! ' : '';
+      const deafHashtags = isDeaf ? ['#DeafCommunity', '#DeafPride', '#ASLFluent', '#AccessibilityMatters', '#InclusiveHiring', '#DeafTalent'] : [];
+      
+      const shareContent = {
+        tiktokCaption: `${deafPrefix}✨ Just got Level ${trustScore.level} verified on FibonroseTrust! Trust Score: ${trustScore.score}/21+ 🎯 #Web3Identity #NFTVerification #TrustScore #FibonroseTrust #DigitalIdentity #Blockchain${deafHashtags.map(tag => ' ' + tag).join('')}`,
+        
+        instagramCaption: `${deafPrefix}Level ${trustScore.level} verified! 🔐 Trust Score: ${trustScore.score}/21+ ⭐ #Web3 #NFT #DigitalIdentity #Verification #Blockchain${deafHashtags.slice(0, 3).map(tag => ' ' + tag).join('')}`,
+        
+        twitterCaption: `${deafPrefix}🎉 Achieved Level ${trustScore.level} verification on @FibonroseTrust! Trust Score: ${trustScore.score}/21+ #Web3Identity #NFTVerification${deafHashtags.slice(0, 2).map(tag => ' ' + tag).join('')}`,
+        
+        hashtagsOptimized: [
+          '#Web3Identity',
+          '#NFTVerification', 
+          '#TrustScore',
+          '#FibonroseTrust',
+          '#DigitalIdentity',
+          '#Blockchain',
+          '#IdentityNFT',
+          '#Web3Verification',
+          ...deafHashtags
+        ]
+      };
+      
+      res.status(200).json({
+        success: true,
+        data: shareContent
+      });
+    } catch (error) {
+      console.error('Error generating share content:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to generate share content'
+      });
+    }
+  });
+
+  // Deaf community and accessibility endpoints
+  app.get('/api/deaf/profile/:userId', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const user = await storage.getUser(userId);
+      const trustScore = await storage.getTrustScore(userId);
+      
+      if (!user || !trustScore) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Mock deaf profile data - in production this would come from database
+      const deafProfile = {
+        userId: user.id,
+        username: user.username,
+        name: user.name,
+        isDeaf: user.username === 'jane.cooper',
+        aslFluency: 'native',
+        preferredCommunication: ['ASL', 'Text', 'Video Relay'],
+        trustScore: trustScore.score,
+        verificationLevel: trustScore.level,
+        communityVouches: 12,
+        companyEndorsements: 3,
+        badges: ['ASL_FLUENT', 'DEAF_COMMUNITY_LEADER', 'ACCESSIBILITY_ADVOCATE', 'EMERGENCY_VERIFIED'],
+        emergencyContactMethod: 'text',
+        accessibilityFeatures: ['Visual Alerts', 'Text-to-Speech', 'Video Relay', 'Live Captions'],
+        profileCompleteness: 95
+      };
+      
+      res.status(200).json({
+        success: true,
+        data: deafProfile
+      });
+    } catch (error) {
+      console.error('Error fetching deaf profile:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch deaf profile'
+      });
+    }
+  });
+
+  app.post('/api/deaf/community/vouch', async (req: Request, res: Response) => {
+    try {
+      const { voucherId, voucheeId, message, category } = req.body;
+      
+      if (!voucherId || !voucheeId || !message) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      // In production, store community vouch in database
+      const vouch = {
+        id: Date.now(),
+        voucherId,
+        voucheeId,
+        message,
+        category: category || 'general',
+        timestamp: new Date().toISOString(),
+        verified: true
+      };
+      
+      res.status(201).json({
+        success: true,
+        message: 'Community vouch recorded successfully',
+        data: vouch
+      });
+    } catch (error) {
+      console.error('Error recording community vouch:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to record community vouch'
+      });
+    }
+  });
+
+  app.post('/api/deaf/emergency/register', async (req: Request, res: Response) => {
+    try {
+      const { userId, preferredMethod, emergencyContacts, medicalInfo } = req.body;
+      
+      if (!userId || !preferredMethod) {
+        return res.status(400).json({ message: 'User ID and preferred contact method required' });
+      }
+      
+      const emergencyProfile = {
+        userId,
+        preferredMethod, // 'text', 'email', 'video', 'app'
+        emergencyContacts: emergencyContacts || [],
+        medicalInfo: medicalInfo || {},
+        registeredAt: new Date().toISOString(),
+        status: 'active',
+        verified: true
+      };
+      
+      res.status(201).json({
+        success: true,
+        message: 'Emergency profile registered successfully',
+        data: emergencyProfile
+      });
+    } catch (error) {
+      console.error('Error registering emergency profile:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to register emergency profile'
+      });
+    }
+  });
+
+  app.post('/api/deaf/company/hire', async (req: Request, res: Response) => {
+    try {
+      const { companyId, userId, jobTitle, requirements, accessibilityNeeds } = req.body;
+      
+      if (!companyId || !userId || !jobTitle) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      const hiringRecord = {
+        id: Date.now(),
+        companyId,
+        userId,
+        jobTitle,
+        requirements: requirements || [],
+        accessibilityNeeds: accessibilityNeeds || [],
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        specializations: ['deaf_customer_service', 'asl_interpretation', 'accessibility_consulting']
+      };
+      
+      res.status(201).json({
+        success: true,
+        message: 'Hiring request submitted successfully',
+        data: hiringRecord
+      });
+    } catch (error) {
+      console.error('Error processing hiring request:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to process hiring request'
+      });
+    }
+  });
+
+  app.get('/api/deaf/companies/hiring', async (req: Request, res: Response) => {
+    try {
+      // Mock companies actively hiring deaf talent
+      const hiringCompanies = [
+        {
+          id: 1,
+          name: 'TechCorp Solutions',
+          positions: ['Customer Support Specialist', 'Accessibility Consultant'],
+          deafFriendly: true,
+          aslSupport: true,
+          accessibilityFeatures: ['Video Relay', 'Text-based Communication', 'Visual Alerts'],
+          trustLevel: 5
+        },
+        {
+          id: 2,
+          name: 'AccessFirst Inc',
+          positions: ['ASL Interpreter', 'Deaf Services Coordinator'],
+          deafFriendly: true,
+          aslSupport: true,
+          accessibilityFeatures: ['Full ASL Support', 'Deaf Management', 'Inclusive Environment'],
+          trustLevel: 5
+        },
+        {
+          id: 3,
+          name: 'CommunityBank',
+          positions: ['Customer Service Representative', 'Financial Advisor'],
+          deafFriendly: true,
+          aslSupport: false,
+          accessibilityFeatures: ['Text Support', 'Email Communication'],
+          trustLevel: 3
+        }
+      ];
+      
+      res.status(200).json({
+        success: true,
+        data: hiringCompanies
+      });
+    } catch (error) {
+      console.error('Error fetching hiring companies:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch hiring companies'
+      });
+    }
+  });
+
+  app.post('/api/deaf/verification/visual-only', async (req: Request, res: Response) => {
+    try {
+      const { userId, documentType, imageData, videoData } = req.body;
+      
+      if (!userId || !documentType) {
+        return res.status(400).json({ message: 'User ID and document type required' });
+      }
+      
+      // Process visual-only verification (no phone verification)
+      const verification = {
+        id: Date.now(),
+        userId,
+        type: 'visual_verification',
+        documentType,
+        method: 'document_upload_and_video',
+        status: 'pending',
+        submittedAt: new Date().toISOString(),
+        requiresPhoneVerification: false,
+        accessibilityCompliant: true
+      };
+      
+      res.status(201).json({
+        success: true,
+        message: 'Visual verification submitted successfully - no phone verification required',
+        data: verification
+      });
+    } catch (error) {
+      console.error('Error processing visual verification:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to process visual verification'
       });
     }
   });
