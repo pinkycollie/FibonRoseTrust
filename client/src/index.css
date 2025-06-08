@@ -2,6 +2,100 @@
 @tailwind components;
 @tailwind utilities;
 
+/* PinkSync Accessibility Styles */
+.high-contrast {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 100%;
+  --primary: 210 100% 70%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 20%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 85%;
+  --accent: 60 100% 70%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 100% 70%;
+  --destructive-foreground: 0 0% 0%;
+  --border: 0 0% 30%;
+  --input: 0 0% 20%;
+  --ring: 210 100% 70%;
+}
+
+.large-text {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.large-text h1 { font-size: 2.5rem; }
+.large-text h2 { font-size: 2rem; }
+.large-text h3 { font-size: 1.75rem; }
+.large-text h4 { font-size: 1.5rem; }
+.large-text .text-sm { font-size: 1rem; }
+.large-text .text-xs { font-size: 0.875rem; }
+
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Deaf-first visual indicators */
+.visual-alert {
+  border: 2px solid;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  position: relative;
+}
+
+.visual-alert::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 0.5rem;
+  background: linear-gradient(45deg, transparent, currentColor, transparent);
+  z-index: -1;
+  animation: visual-pulse 2s infinite;
+}
+
+@keyframes visual-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* Enhanced touch targets for mobile */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ASL video styling */
+.asl-video {
+  border: 3px solid #8b5cf6;
+  border-radius: 0.75rem;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+/* Vibration feedback indicator */
+.vibration-active {
+  animation: vibrate 0.3s ease-in-out;
+}
+
+@keyframes vibrate {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
 /* Mobile-first responsive utilities */
 @layer base {
   html {
