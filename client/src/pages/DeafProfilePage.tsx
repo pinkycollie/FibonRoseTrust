@@ -11,6 +11,7 @@ import {
   AlertTriangle, Camera, FileText, CheckCircle
 } from "lucide-react";
 import { TikTokShareButton } from "@/components/TikTokShareButton";
+import { PinkSyncAccessibility } from "@/components/PinkSyncAccessibility";
 import { useQuery } from "@tanstack/react-query";
 
 interface DeafProfile {
@@ -132,12 +133,13 @@ export default function DeafProfilePage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="badges">Badges</TabsTrigger>
           <TabsTrigger value="community">Community</TabsTrigger>
           <TabsTrigger value="companies">Companies</TabsTrigger>
           <TabsTrigger value="emergency">Emergency</TabsTrigger>
+          <TabsTrigger value="accessibility">PinkSync</TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
@@ -441,6 +443,11 @@ export default function DeafProfilePage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* PinkSync Accessibility Tab */}
+        <TabsContent value="accessibility">
+          <PinkSyncAccessibility userId={deafProfile.userId} />
         </TabsContent>
       </Tabs>
     </div>

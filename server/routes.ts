@@ -18,6 +18,7 @@ import { WebhookService } from './services/webhook';
 import { XanoIntegration } from './services/integrations/xano';
 import { universalWebhookManager } from './services/universal-webhook';
 import { setupAuth, requiresDeveloper } from './auth';
+import { pinkSyncService } from './services/pinksync-integration';
 import { negraRosaAuth0 } from './services/integrations/negrarosa-auth0';
 import apiRouter from './controllers/api';
 
@@ -787,33 +788,215 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId, documentType, imageData, videoData } = req.body;
       
       if (!userId || !documentType) {
-        return res.status(400).json({ message: 'User ID and document type required' });
+        const errorResponse = pinkSyncService.createErrorResponse(
+          'validation_error',
+          'User ID and document type required',
+          { fields: ['userId', 'documentType'] }
+        );
+        return res.status(400).json(errorResponse);
       }
       
-      // Process visual-only verification (no phone verification)
-      const verification = {
-        id: Date.now(),
-        userId,
-        type: 'visual_verification',
-        documentType,
-        method: 'document_upload_and_video',
-        status: 'pending',
-        submittedAt: new Date().toISOString(),
-        requiresPhoneVerification: false,
-        accessibilityCompliant: true
-      };
-      
-      res.status(201).json({
-        success: true,
-        message: 'Visual verification submitted successfully - no phone verification required',
-        data: verification
+      // Submit to PinkSync verification system
+      const verificationSubmission = await pinkSyncService.submitVerification({
+        user_id: userId.toString(),
+        type: 'deaf_creator',
+        documents: [
+          { type: documentType, data: imageData || videoData }
+        ],
+        notes: 'Visual-only verification - no phone verification required'
       });
+      
+      const successResponse = pinkSyncService.createSuccessResponse(
+        verificationSubmission,
+        'Visual verification submitted successfully - no phone verification required'
+      );
+      
+      res.status(201).json(successResponse);
     } catch (error) {
       console.error('Error processing visual verification:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to process visual verification'
+      const errorResponse = pinkSyncService.createErrorResponse(
+        'server_error',
+        'Failed to process visual verification'
+      );
+      res.status(500).json(errorResponse);
+    }
+  });
+
+  // PinkSync ecosystem endpoints
+  app.get('/api/pinksync/interface/:platform', async (req: Request, res: Response) => {
+    try {
+      const { platform } = req.params;
+      const validPlatforms = ['web', 'ios', 'android', 'desktop'];
+      
+      if (!validPlatforms.includes(platform)) {
+        const errorResponse = pinkSyncService.createErrorResponse(
+          'validation_error',
+          'Invalid platform specified',
+          { validPlatforms }
+        );
+        return res.status(400).json(errorResponse);
+      }
+      
+      const interfaceConfig = await pinkSyncService.getDeviceInterface(platform as any);
+      const successResponse = pinkSyncService.createSuccessResponse(interfaceConfig);
+      
+      res.status(200).json(successResponse);
+    } catch (error) {
+      console.error('Error getting interface config:', error);
+      const errorResponse = pinkSyncService.createErrorResponse(
+        'server_error',
+        'Failed to get interface configuration'
+      );
+      res.status(500).json(errorResponse);
+    }
+  });
+
+  app.post('/api/pinksync/notifications', async (req: Request, res: Response) => {
+    try {
+      const { user_id, type, title, message, data, visual_feedback_type } = req.body;
+      
+      if (!user_id || !type || !title || !message) {
+        const errorResponse = pinkSyncService.createErrorResponse(
+          'validation_error',
+          'Missing required notification fields',
+          { required: ['user_id', 'type', 'title', 'message'] }
+        );
+        return res.status(400).json(errorResponse);
+      }
+      
+      const notification = await pinkSyncService.sendNotification({
+        user_id,
+        type,
+        title,
+        message,
+        data,
+        visual_feedback_type: visual_feedback_type || 'info'
       });
+      
+      const successResponse = pinkSyncService.createSuccessResponse(
+        notification,
+        'Notification sent with visual feedback'
+      );
+      
+      res.status(201).json(successResponse);
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      const errorResponse = pinkSyncService.createErrorResponse(
+        'server_error',
+        'Failed to send notification'
+      );
+      res.status(500).json(errorResponse);
+    }
+  });
+
+  app.patch('/api/pinksync/users/:userId/preferences', async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const preferences = req.body;
+      
+      const updatedPreferences = await pinkSyncService.updateUserPreferences(userId, preferences);
+      const successResponse = pinkSyncService.createSuccessResponse(
+        { preferences: updatedPreferences },
+        'User preferences updated successfully'
+      );
+      
+      res.status(200).json(successResponse);
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      const errorResponse = pinkSyncService.createErrorResponse(
+        'server_error',
+        'Failed to update user preferences'
+      );
+      res.status(500).json(errorResponse);
+    }
+  });
+
+  app.get('/api/pinksync/users/:userId/badges', async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      const badges = await pinkSyncService.getUserTrustBadges(userId);
+      const successResponse = pinkSyncService.createSuccessResponse(
+        { badges },
+        'Trust badges retrieved successfully'
+      );
+      
+      res.status(200).json(successResponse);
+    } catch (error) {
+      console.error('Error fetching badges:', error);
+      const errorResponse = pinkSyncService.createErrorResponse(
+        'server_error',
+        'Failed to fetch trust badges'
+      );
+      res.status(500).json(errorResponse);
+    }
+  });
+
+  app.post('/api/pinksync/videos/upload', async (req: Request, res: Response) => {
+    try {
+      const { user_id, title, description, file_data, sign_language } = req.body;
+      
+      if (!user_id || !title || !file_data) {
+        const errorResponse = pinkSyncService.createErrorResponse(
+          'validation_error',
+          'Missing required video fields',
+          { required: ['user_id', 'title', 'file_data'] }
+        );
+        return res.status(400).json(errorResponse);
+      }
+      
+      const videoResult = await pinkSyncService.processVideo({
+        user_id,
+        title,
+        description,
+        file_data,
+        sign_language: sign_language || 'asl'
+      });
+      
+      const successResponse = pinkSyncService.createSuccessResponse(
+        videoResult,
+        'Video uploaded and processing started'
+      );
+      
+      res.status(201).json(successResponse);
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      const errorResponse = pinkSyncService.createErrorResponse(
+        'server_error',
+        'Failed to upload video'
+      );
+      res.status(500).json(errorResponse);
+    }
+  });
+
+  app.patch('/api/pinksync/progress/tasks/:taskId', async (req: Request, res: Response) => {
+    try {
+      const { taskId } = req.params;
+      const { percent_complete, status } = req.body;
+      
+      if (typeof percent_complete !== 'number' || percent_complete < 0 || percent_complete > 100) {
+        const errorResponse = pinkSyncService.createErrorResponse(
+          'validation_error',
+          'percent_complete must be a number between 0 and 100'
+        );
+        return res.status(400).json(errorResponse);
+      }
+      
+      await pinkSyncService.updateTaskProgress(taskId, percent_complete, status);
+      
+      const successResponse = pinkSyncService.createSuccessResponse(
+        { task_id: taskId, percent_complete, status },
+        'Task progress updated successfully'
+      );
+      
+      res.status(200).json(successResponse);
+    } catch (error) {
+      console.error('Error updating task progress:', error);
+      const errorResponse = pinkSyncService.createErrorResponse(
+        'server_error',
+        'Failed to update task progress'
+      );
+      res.status(500).json(errorResponse);
     }
   });
   
