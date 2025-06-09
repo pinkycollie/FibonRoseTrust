@@ -19,6 +19,7 @@ import { XanoIntegration } from './services/integrations/xano';
 import { universalWebhookManager } from './services/universal-webhook';
 import { setupAuth, requiresDeveloper } from './auth';
 import { pinkSyncService } from './services/pinksync-integration';
+import { deafFirstService } from './services/deaf-first-integration';
 import { negraRosaAuth0 } from './services/integrations/negrarosa-auth0';
 import apiRouter from './controllers/api';
 
@@ -997,6 +998,211 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'Failed to update task progress'
       );
       res.status(500).json(errorResponse);
+    }
+  });
+
+  // DeafFirst MCP Module API endpoints
+  app.get('/api/users/:userId/accessibility-preferences', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const preferences = await deafFirstService.getUserAccessibilityPreferences(userId);
+      
+      res.status(200).json(preferences);
+    } catch (error) {
+      console.error('Error getting accessibility preferences:', error);
+      res.status(500).json({ error: 'Failed to get accessibility preferences' });
+    }
+  });
+
+  app.patch('/api/users/:userId/accessibility-preferences', async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const updates = req.body;
+      
+      const updatedPreferences = await deafFirstService.updateAccessibilityPreferences(userId, updates);
+      
+      res.status(200).json(updatedPreferences);
+    } catch (error) {
+      console.error('Error updating accessibility preferences:', error);
+      res.status(500).json({ error: 'Failed to update accessibility preferences' });
+    }
+  });
+
+  app.get('/api/deaf-auth/sessions', async (req: Request, res: Response) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : 1;
+      const session = await deafFirstService.createDeafAuthSession(userId);
+      
+      res.status(200).json(session);
+    } catch (error) {
+      console.error('Error creating deaf auth session:', error);
+      res.status(500).json({ error: 'Failed to create deaf auth session' });
+    }
+  });
+
+  app.post('/api/sign-language/recognize', async (req: Request, res: Response) => {
+    try {
+      const { videoData, language = 'asl' } = req.body;
+      
+      if (!videoData) {
+        return res.status(400).json({ error: 'Video data is required' });
+      }
+      
+      const result = await deafFirstService.recognizeSignLanguage(videoData, language);
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Error recognizing sign language:', error);
+      res.status(500).json({ error: 'Failed to recognize sign language' });
+    }
+  });
+
+  app.get('/api/sign-language/gestures/:language', async (req: Request, res: Response) => {
+    try {
+      const { language } = req.params;
+      const gestures = await deafFirstService.getGestureLibrary(language);
+      
+      res.status(200).json(gestures);
+    } catch (error) {
+      console.error('Error getting gesture library:', error);
+      res.status(500).json({ error: 'Failed to get gesture library' });
+    }
+  });
+
+  app.post('/api/captions/process', async (req: Request, res: Response) => {
+    try {
+      const { audioData, language = 'en-US' } = req.body;
+      
+      if (!audioData) {
+        return res.status(400).json({ error: 'Audio data is required' });
+      }
+      
+      const segments = await deafFirstService.processLiveCaptions(audioData, language);
+      
+      res.status(200).json(segments);
+    } catch (error) {
+      console.error('Error processing captions:', error);
+      res.status(500).json({ error: 'Failed to process captions' });
+    }
+  });
+
+  app.post('/api/captions/export', async (req: Request, res: Response) => {
+    try {
+      const { segments, format = 'srt' } = req.body;
+      
+      if (!segments || !Array.isArray(segments)) {
+        return res.status(400).json({ error: 'Segments array is required' });
+      }
+      
+      const exportedContent = await deafFirstService.exportCaptions(segments, format);
+      
+      res.status(200).json({ content: exportedContent, format });
+    } catch (error) {
+      console.error('Error exporting captions:', error);
+      res.status(500).json({ error: 'Failed to export captions' });
+    }
+  });
+
+  app.get('/api/interpreters/search', async (req: Request, res: Response) => {
+    try {
+      const { language = 'asl', urgency = 'normal' } = req.query;
+      
+      const interpreters = await deafFirstService.findInterpreters(language as string, urgency as string);
+      
+      res.status(200).json(interpreters);
+    } catch (error) {
+      console.error('Error finding interpreters:', error);
+      res.status(500).json({ error: 'Failed to find interpreters' });
+    }
+  });
+
+  app.post('/api/interpreters/request-session', async (req: Request, res: Response) => {
+    try {
+      const { language = 'asl', urgency = 'normal', duration = 30 } = req.body;
+      
+      const sessionId = await deafFirstService.requestInterpreterSession(language, urgency, duration);
+      
+      res.status(201).json({ sessionId, language, urgency, duration });
+    } catch (error) {
+      console.error('Error requesting interpreter session:', error);
+      res.status(500).json({ error: 'Failed to request interpreter session' });
+    }
+  });
+
+  app.post('/api/accessibility/color-contrast', async (req: Request, res: Response) => {
+    try {
+      const { foreground, background } = req.body;
+      
+      if (!foreground || !background) {
+        return res.status(400).json({ error: 'Foreground and background colors are required' });
+      }
+      
+      const contrastResult = await deafFirstService.checkColorContrast(foreground, background);
+      
+      res.status(200).json(contrastResult);
+    } catch (error) {
+      console.error('Error checking color contrast:', error);
+      res.status(500).json({ error: 'Failed to check color contrast' });
+    }
+  });
+
+  app.post('/api/accessibility/audit', async (req: Request, res: Response) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: 'URL is required for audit' });
+      }
+      
+      const auditReport = await deafFirstService.performAccessibilityAudit(url);
+      
+      res.status(200).json(auditReport);
+    } catch (error) {
+      console.error('Error performing accessibility audit:', error);
+      res.status(500).json({ error: 'Failed to perform accessibility audit' });
+    }
+  });
+
+  app.post('/api/communication/create-session', async (req: Request, res: Response) => {
+    try {
+      const { mode, participants = [], features = [] } = req.body;
+      
+      if (!mode) {
+        return res.status(400).json({ error: 'Communication mode is required' });
+      }
+      
+      const sessionId = await deafFirstService.createCommunicationSession(mode, participants, features);
+      
+      res.status(201).json({ sessionId, mode, participants, features });
+    } catch (error) {
+      console.error('Error creating communication session:', error);
+      res.status(500).json({ error: 'Failed to create communication session' });
+    }
+  });
+
+  app.get('/api/community/resources', async (req: Request, res: Response) => {
+    try {
+      const { query, type } = req.query;
+      
+      const resources = await deafFirstService.searchCommunityResources(query as string, type as string);
+      
+      res.status(200).json(resources);
+    } catch (error) {
+      console.error('Error searching community resources:', error);
+      res.status(500).json({ error: 'Failed to search community resources' });
+    }
+  });
+
+  app.get('/api/community/support-groups', async (req: Request, res: Response) => {
+    try {
+      const { location = 'online', language = 'asl' } = req.query;
+      
+      const groups = await deafFirstService.findSupportGroups(location as string, language as string);
+      
+      res.status(200).json(groups);
+    } catch (error) {
+      console.error('Error finding support groups:', error);
+      res.status(500).json({ error: 'Failed to find support groups' });
     }
   });
   

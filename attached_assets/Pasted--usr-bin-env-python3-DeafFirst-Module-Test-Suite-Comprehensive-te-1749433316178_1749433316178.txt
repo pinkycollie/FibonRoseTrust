@@ -1,0 +1,355 @@
+#!/usr/bin/env python3
+"""
+DeafFirst Module Test Suite
+===========================
+
+Comprehensive tests to validate DeafFirst MCP modules work correctly
+with the live DeafFirst accessibility platform.
+"""
+
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'deaf-first'))
+
+import requests
+import json
+from datetime import datetime
+
+
+def test_api_connectivity():
+    """Test basic API connectivity."""
+    print("Testing API connectivity...")
+    try:
+        response = requests.get(
+            "http://localhost:5000/api/users/1/accessibility-preferences",
+            timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            print(
+                f"✓ API connected - User preferences loaded (Sign Language: {data.get('signLanguage', 'N/A')})"
+            )
+            return True
+        else:
+            print(f"✗ API returned status {response.status_code}")
+            return False
+    except requests.RequestException as e:
+        print(f"✗ API connection failed: {e}")
+        return False
+
+
+def test_sign_language_module():
+    """Test sign language processing module."""
+    print("\nTesting Sign Language Module...")
+    try:
+        from sign_language import SignLanguageProcessor
+        processor = SignLanguageProcessor()
+
+        # Test supported languages
+        print(f"✓ Supported languages: {len(processor.supported_languages)}")
+
+        # Test gesture library
+        gestures = processor.get_gesture_library("asl")
+        print(f"✓ Gesture library accessible (returned {len(gestures)} items)")
+
+        # Test recognition (with mock data since we don't have actual video)
+        result = processor.recognize("test_video.mp4", "asl")
+        print(
+            f"✓ Recognition function works - Text: '{result.text}', Confidence: {result.confidence}"
+        )
+
+        return True
+    except Exception as e:
+        print(f"✗ Sign language module failed: {e}")
+        return False
+
+
+def test_captions_module():
+    """Test live captioning module."""
+    print("\nTesting Live Captioning Module...")
+    try:
+        from captions import LiveCaptioning, CaptionSettings
+        captioner = LiveCaptioning()
+
+        # Test settings creation
+        settings = CaptionSettings(font_size=20, language="en-US")
+        print(f"✓ Caption settings created - Font size: {settings.font_size}")
+
+        # Test processing
+        segments = captioner.process("test_audio", "en-US", settings)
+        print(
+            f"✓ Caption processing works (returned {len(segments)} segments)")
+
+        # Test export
+        if segments:
+            srt_content = captioner.export_captions(segments, "srt")
+            print(
+                f"✓ SRT export works (generated {len(srt_content)} characters)"
+            )
+
+        return True
+    except Exception as e:
+        print(f"✗ Captions module failed: {e}")
+        return False
+
+
+def test_interpreter_module():
+    """Test interpreter services module."""
+    print("\nTesting Interpreter Services Module...")
+    try:
+        from interpreter import InterpreterServices, UrgencyLevel
+        service = InterpreterServices()
+
+        # Test urgency levels
+        print(
+            f"✓ Urgency levels available: {[level.value for level in UrgencyLevel]}"
+        )
+
+        # Test interpreter search
+        interpreters = service.find_interpreters("asl", UrgencyLevel.NORMAL)
+        print(
+            f"✓ Interpreter search works (found {len(interpreters)} interpreters)"
+        )
+
+        # Test session request
+        request_id = service.request_session("asl", "normal", duration=30)
+        if request_id:
+            print(f"✓ Session request created: {request_id}")
+        else:
+            print(
+                "✓ Session request function works (no active request needed)")
+
+        return True
+    except Exception as e:
+        print(f"✗ Interpreter module failed: {e}")
+        return False
+
+
+def test_accessibility_module():
+    """Test accessibility tools module."""
+    print("\nTesting Accessibility Module...")
+    try:
+        from accessibility import AccessibilityTools, ComplianceStandard
+        tools = AccessibilityTools()
+
+        # Test compliance standards
+        standards = [std.value for std in ComplianceStandard]
+        print(f"✓ Compliance standards: {len(standards)} available")
+
+        # Test color contrast
+        contrast = tools.check_color_contrast("#000000", "#FFFFFF")
+        print(
+            f"✓ Color contrast check - Ratio: {contrast.get('ratio', 'N/A')}")
+
+        # Test accessibility audit
+        report = tools.audit("https://example.com")
+        print(f"✓ Accessibility audit works - Score: {report.score}")
+
+        return True
+    except Exception as e:
+        print(f"✗ Accessibility module failed: {e}")
+        return False
+
+
+def test_communication_module():
+    """Test real-time communication module."""
+    print("\nTesting Communication Module...")
+    try:
+        from communication import RealTimeCommunication, CommunicationMode
+        comm = RealTimeCommunication()
+
+        # Test communication modes
+        modes = [mode.value for mode in CommunicationMode]
+        print(f"✓ Communication modes: {len(modes)} available")
+
+        # Test session creation
+        session_id = comm.create_session("video_call", ["user1"],
+                                         features=["live_captions"])
+        if session_id:
+            print(f"✓ Communication session created: {session_id}")
+        else:
+            print("✓ Session creation function works")
+
+        return True
+    except Exception as e:
+        print(f"✗ Communication module failed: {e}")
+        return False
+
+
+def test_community_module():
+    """Test community resources module."""
+    print("\nTesting Community Module...")
+    try:
+        from community import CommunityResources, ResourceType
+        community = CommunityResources()
+
+        # Test resource types
+        types = [rt.value for rt in ResourceType]
+        print(f"✓ Resource types: {len(types)} available")
+
+        # Test resource search
+        resources = community.search_resources("accessibility", "educational")
+        print(f"✓ Resource search works (found {len(resources)} resources)")
+
+        # Test support group search
+        groups = community.find_support_groups("online", "asl")
+        print(f"✓ Support group search works (found {len(groups)} groups)")
+
+        return True
+    except Exception as e:
+        print(f"✗ Community module failed: {e}")
+        return False
+
+
+def test_main_module():
+    """Test main deaf_first module imports."""
+    print("\nTesting Main Module...")
+    try:
+        # Test if we can import from the main module path
+        sys.path.insert(0, os.path.dirname(__file__))
+
+        # Create a temporary __init__.py to test imports
+        init_content = """
+from .sign_language import SignLanguageProcessor
+from .captions import LiveCaptioning
+
+def recognize_sign_language(input_data, language="asl"):
+    processor = SignLanguageProcessor()
+    return processor.recognize(input_data, language)
+
+def live_caption(audio_input, language="en-US"):
+    captioner = LiveCaptioning()
+    return captioner.process(audio_input, language)
+"""
+
+        # Test direct imports
+        from sign_language import SignLanguageProcessor
+        from captions import LiveCaptioning
+        print("✓ Direct module imports work")
+
+        # Test module functionality
+        processor = SignLanguageProcessor()
+        captioner = LiveCaptioning()
+        print("✓ Module instantiation works")
+
+        return True
+    except Exception as e:
+        print(f"✗ Main module failed: {e}")
+        return False
+
+
+def test_integration_with_live_api():
+    """Test integration with live DeafFirst API."""
+    print("\nTesting Live API Integration...")
+    try:
+        # Test real API endpoints that should exist
+        endpoints_to_test = [
+            "/api/users/1/accessibility-preferences", "/api/deaf-auth/sessions"
+        ]
+
+        for endpoint in endpoints_to_test:
+            response = requests.get(f"http://localhost:5000{endpoint}",
+                                    timeout=5)
+            if response.status_code == 200:
+                print(f"✓ {endpoint} - Active")
+            else:
+                print(f"⚠ {endpoint} - Status {response.status_code}")
+
+        # Test WebSocket connectivity (basic check)
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex(('localhost', 5000))
+        sock.close()
+
+        if result == 0:
+            print("✓ WebSocket port accessible")
+        else:
+            print("⚠ WebSocket port not accessible")
+
+        return True
+    except Exception as e:
+        print(f"✗ Live API integration failed: {e}")
+        return False
+
+
+def run_performance_test():
+    """Test module performance and response times."""
+    print("\nRunning Performance Tests...")
+    try:
+        import time
+
+        # Test API response time
+        start_time = time.time()
+        response = requests.get(
+            "http://localhost:5000/api/users/1/accessibility-preferences")
+        api_time = time.time() - start_time
+        print(f"✓ API response time: {api_time:.3f}s")
+
+        # Test module import time
+        start_time = time.time()
+        from sign_language import SignLanguageProcessor
+        import_time = time.time() - start_time
+        print(f"✓ Module import time: {import_time:.3f}s")
+
+        # Test module initialization time
+        start_time = time.time()
+        processor = SignLanguageProcessor()
+        init_time = time.time() - start_time
+        print(f"✓ Module initialization time: {init_time:.3f}s")
+
+        return True
+    except Exception as e:
+        print(f"✗ Performance test failed: {e}")
+        return False
+
+
+def main():
+    """Run comprehensive test suite."""
+    print("DeafFirst MCP Module Test Suite")
+    print("=" * 50)
+    print(f"Test started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print()
+
+    tests = [
+        test_api_connectivity, test_sign_language_module, test_captions_module,
+        test_interpreter_module, test_accessibility_module,
+        test_communication_module, test_community_module, test_main_module,
+        test_integration_with_live_api, run_performance_test
+    ]
+
+    passed = 0
+    failed = 0
+
+    for test in tests:
+        try:
+            if test():
+                passed += 1
+            else:
+                failed += 1
+        except Exception as e:
+            print(f"✗ {test.__name__} crashed: {e}")
+            failed += 1
+
+    print("\n" + "=" * 50)
+    print("Test Results Summary:")
+    print(f"✓ Passed: {passed}")
+    print(f"✗ Failed: {failed}")
+    print(f"Total: {passed + failed}")
+
+    if failed == 0:
+        print("\n🎉 All tests passed! DeafFirst MCP modules are ready for use.")
+    else:
+        print(
+            f"\n⚠ {failed} test(s) failed. Check the output above for details."
+        )
+
+    print(
+        f"\nTest completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    return failed == 0
+
+
+if __name__ == "__main__":
+    success = main()
+    sys.exit(0 if success else 1)
