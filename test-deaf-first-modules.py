@@ -22,13 +22,17 @@ def test_api_connectivity():
             "http://localhost:5000/api/users/1/accessibility-preferences",
             timeout=5)
         if response.status_code == 200:
-            data = response.json()
-            print(
-                f"✓ API connected - User preferences loaded (Sign Language: {data.get('signLanguage', 'N/A')})"
-            )
-            return True
+            try:
+                data = response.json()
+                print(
+                    f"✓ API connected - User preferences loaded (Sign Language: {data.get('signLanguage', 'N/A')})"
+                )
+                return True
+            except json.JSONDecodeError:
+                print(f"✗ API returned invalid JSON: {response.text[:100]}")
+                return False
         else:
-            print(f"✗ API returned status {response.status_code}")
+            print(f"✗ API returned status {response.status_code}: {response.text[:100]}")
             return False
     except requests.RequestException as e:
         print(f"✗ API connection failed: {e}")
