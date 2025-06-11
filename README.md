@@ -243,15 +243,15 @@ This dual verification system addresses critical gaps where interpreters falsely
 
 **Fibonrose Trust Verification System**
 Platform: https://fibonrose.pinksync.io
-Email: verify@fibonrosetrust.com
+Email: verify@fibonrosetrust.pinksync.io
 Video Phone: [VP Number]
 Text Support: [SMS Number]
 
 **Verification Inquiries**
-Interpreters: interpreters@fibonrosetrust.com
-Service Providers: providers@fibonrosetrust.com
-Community Members: community@fibonrosetrust.com
-Deaf Professionals: deafpros@fibonrosetrust.com
+Interpreters: interpreters@fibonrosetrust.pinksync.io
+Service Providers: providers@fibonrosetrust.pinksync.io
+Community Members: community@fibonrosetrust.pinksync.io
+Deaf Professionals: deafpros@fibonrosetrust.pinksync.io
 
 ## Legal Framework
 
