@@ -265,3 +265,10 @@ This verification system operates under:
 -----
 
 *Ensuring authentic interpretation, preventing exclusion, building trust - one verification at a time.*
+LICENSE: STRICT – NO USE WITHOUT WRITTEN PERMISSION
+
+1. Unauthorized copying, forking, derivation, distribution, or commercial use of any part of this repository is prohibited.
+2. No rights are granted under this license except those explicitly outlined in a signed permission agreement with Ms. Pinky Collie.
+3. All intellectual property rights in this repository remain exclusively with Pinky Collie.
+
+Violators will be subject to legal and public enforcement actions.
