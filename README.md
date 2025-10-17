@@ -65,3 +65,66 @@ const professionalCategories = {
     advisors: ['financial_planners', 'investment_advisors', 'tax_professionals', 'accountants'],
     banking: ['loan_officers', 'bank_tellers', 'credit_counselors', 'mortgage_specialists'],
     insurance: ['insurance_agents', 'claims_adjust
+
+## Development
+
+### Testing
+
+This project includes automated tests to ensure code quality and reliability. The test suite uses Vitest, a fast and modern testing framework.
+
+#### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm test
+
+# Run tests once (CI mode)
+npm run test:run
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+#### Test Coverage
+
+The test suite covers:
+- Fibonacci trust scoring utilities
+- Storage operations (users, verifications, trust scores)
+- Data permission management
+- Utility functions
+
+For detailed testing documentation, see [docs/TESTING.md](docs/TESTING.md).
+
+### CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment:
+- Automated testing on every push and pull request
+- Multi-version Node.js compatibility testing (18.x, 20.x)
+- Code coverage reporting
+- Type checking
+- Build verification
+
+The CI/CD workflow is defined in `.github/workflows/ci.yml`.
+
+### Getting Started
+
+```bash
+# Install dependencies
+npm install
+
+# Run in development mode
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+## License
+
+MIT
