@@ -6,7 +6,7 @@
 
 import { Router, Request, Response } from 'express';
 import * as personaController from './persona.controller';
-import { standardRateLimit, strictRateLimit } from '../../middlewares/rate-limit';
+import { standardRateLimit, strictRateLimit, webhookRateLimit } from '../../middlewares/rate-limit';
 
 // Create the main router for API v1
 const apiV1Router = Router();
@@ -35,7 +35,7 @@ apiV1Router.get('/', (req: Request, res: Response) => {
 apiV1Router.post('/persona/inquiries', strictRateLimit, personaController.createPersonaInquiry);
 apiV1Router.get('/persona/inquiries/:inquiryId', standardRateLimit, personaController.getPersonaInquiryStatus);
 apiV1Router.get('/persona/users/:userId/inquiries', standardRateLimit, personaController.listPersonaInquiries);
-apiV1Router.post('/persona/webhook', personaController.handlePersonaWebhook);
+apiV1Router.post('/persona/webhook', webhookRateLimit, personaController.handlePersonaWebhook);
 apiV1Router.get('/persona/test-connection', strictRateLimit, personaController.testPersonaConnection);
 
 // Once individual controllers are ready, uncomment and integrate them:
