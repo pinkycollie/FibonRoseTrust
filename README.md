@@ -95,6 +95,8 @@ The test suite covers:
 - Storage operations (users, verifications, trust scores)
 - Data permission management
 - Utility functions
+- API endpoints
+- Persona integration
 
 For detailed testing documentation, see [docs/TESTING.md](docs/TESTING.md).
 
@@ -106,8 +108,29 @@ The project uses GitHub Actions for continuous integration and deployment:
 - Code coverage reporting
 - Type checking
 - Build verification
+- Separate workflows for dev, staging, and production environments
 
-The CI/CD workflow is defined in `.github/workflows/ci.yml`.
+**Workflows:**
+- `.github/workflows/ci.yml` - Main CI workflow for main and develop branches
+- `.github/workflows/dev-deploy.yml` - Dev environment deployment
+
+**Deployment Targets:**
+- Backend: Google Cloud Run (Express/TypeScript)
+- Frontend: Vercel (React/Vite)
+- Database: Neon PostgreSQL
+
+For detailed deployment documentation, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+### Identity Verification with Persona
+
+FibonroseTrust integrates with [Persona](https://withpersona.com) for comprehensive identity verification:
+
+- Document verification (passports, driver's licenses, etc.)
+- Biometric verification (selfies, liveness detection)
+- Continuous monitoring and risk assessment
+- Webhook integration for real-time updates
+
+For detailed Persona integration documentation, see [docs/PERSONA_INTEGRATION.md](docs/PERSONA_INTEGRATION.md).
 
 ### Getting Started
 
@@ -123,7 +146,38 @@ npm run build
 
 # Start production server
 npm start
+
+# Run tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
 ```
+
+### Environment Variables
+
+Create a `.env` file with the following variables:
+
+```bash
+# Server
+NODE_ENV=development
+PORT=5000
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/fibonrose
+
+# Persona Integration
+PERSONA_API_KEY=your_api_key
+PERSONA_ENVIRONMENT=sandbox
+PERSONA_TEMPLATE_ID=your_template_id
+PERSONA_WEBHOOK_SECRET=your_webhook_secret
+```
+
+## Documentation
+
+- [Testing Guide](docs/TESTING.md) - Comprehensive testing documentation
+- [Deployment Guide](docs/DEPLOYMENT.md) - Deployment to Cloud Run and Vercel
+- [Persona Integration](docs/PERSONA_INTEGRATION.md) - Identity verification setup
 
 ## License
 

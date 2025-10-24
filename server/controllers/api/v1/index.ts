@@ -5,6 +5,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import * as personaController from './persona.controller';
 
 // Create the main router for API v1
 const apiV1Router = Router();
@@ -21,12 +22,20 @@ apiV1Router.get('/', (req: Request, res: Response) => {
       '/nfts',
       '/webhooks',
       '/security',
-      '/integrations'
+      '/integrations',
+      '/persona'
     ],
     status: 'Under active development',
     documentation: '/api/docs'
   });
 });
+
+// Persona Identity Verification Routes
+apiV1Router.post('/persona/inquiries', personaController.createPersonaInquiry);
+apiV1Router.get('/persona/inquiries/:inquiryId', personaController.getPersonaInquiryStatus);
+apiV1Router.get('/persona/users/:userId/inquiries', personaController.listPersonaInquiries);
+apiV1Router.post('/persona/webhook', personaController.handlePersonaWebhook);
+apiV1Router.get('/persona/test-connection', personaController.testPersonaConnection);
 
 // Once individual controllers are ready, uncomment and integrate them:
 /*
