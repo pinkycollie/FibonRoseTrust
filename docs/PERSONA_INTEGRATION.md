@@ -4,6 +4,8 @@
 
 FibonroseTrust integrates with [Persona](https://withpersona.com) to provide comprehensive identity verification services. Persona enables secure, compliant identity verification through document scanning, biometric checks, and continuous monitoring.
 
+**Important**: Users must authenticate with DeafAUTH before accessing Persona verification features.
+
 ## Features
 
 - **Identity Verification**: Verify user identities through government-issued IDs
@@ -11,6 +13,32 @@ FibonroseTrust integrates with [Persona](https://withpersona.com) to provide com
 - **Biometric Verification**: Selfie verification and liveness detection
 - **Continuous Monitoring**: Ongoing verification and risk assessment
 - **Webhook Integration**: Real-time status updates via webhooks
+- **DeafAUTH Integration**: Secure authentication flow for deaf users
+- **Custom Domain**: Branded experience at fibonrose.withpersona.com
+
+## Prerequisites
+
+### DeafAUTH Authentication
+
+All users must authenticate with DeafAUTH before initiating Persona verification:
+
+1. **DeafAUTH Session**: Users first create a DeafAUTH session
+2. **Token Generation**: DeafAUTH provides a session token
+3. **Persona Access**: Token is used to authorize Persona API calls
+
+Example authentication flow:
+
+```typescript
+// Step 1: Create DeafAUTH session
+const deafAuthResponse = await fetch('/api/deaf-auth/sessions?userId=123');
+const { sessionId, token, expiresAt } = await deafAuthResponse.json();
+
+// Step 2: Use token for Persona operations
+const headers = {
+  'Authorization': `Bearer ${token}`,
+  'Content-Type': 'application/json'
+};
+```
 
 ## Setup
 
@@ -20,6 +48,7 @@ FibonroseTrust integrates with [Persona](https://withpersona.com) to provide com
 2. Navigate to the API Keys section in your dashboard
 3. Create a new API key for your environment (sandbox or production)
 4. Note your Template ID for the verification flow
+5. (Optional) Configure custom domain: fibonrose.withpersona.com
 
 ### 2. Configure Environment Variables
 
@@ -31,6 +60,10 @@ PERSONA_API_KEY=your_api_key_here
 PERSONA_ENVIRONMENT=sandbox  # or 'production'
 PERSONA_TEMPLATE_ID=your_template_id_here
 PERSONA_WEBHOOK_SECRET=your_webhook_secret_here
+PERSONA_CUSTOM_DOMAIN=fibonrose.withpersona.com  # Optional
+
+# DeafAUTH Configuration
+DEAFAUTH_API_URL=https://deafauth.pinksync.io/v1
 ```
 
 ### 3. Initialize Persona Integration
@@ -55,6 +88,8 @@ initPersona({
 Create a new identity verification inquiry for a user.
 
 **Endpoint:** `POST /api/v1/persona/inquiries`
+
+**Authentication**: Requires DeafAUTH token
 
 **Request Body:**
 ```json
@@ -203,25 +238,123 @@ The webhook automatically:
 
 ## Client Integration
 
-### Embed Persona Flow
+### Authentication with DeafAUTH
 
-Use the session URL returned from the create inquiry endpoint to embed Persona's verification flow:
+Before initiating identity verification with Persona, users must first authenticate with DeafAUTH:
 
 ```typescript
-// React example
+// Step 1: Authenticate with DeafAUTH
+const deafAuthResponse = await fetch('/api/deaf-auth/sessions', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+const { sessionId, token } = await deafAuthResponse.json();
+
+// Step 2: Create Persona inquiry with authenticated user
+const personaResponse = await fetch('/api/v1/persona/inquiries', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    userId: authenticatedUserId,
+    redirectUri: 'https://fibonrose.withpersona.com/verification-complete'
+  })
+});
+```
+
+### Embed Persona Flow
+
+FibonroseTrust supports multiple ways to integrate Persona verification:
+
+#### Option 1: Embedded Client (Recommended)
+
+Use Persona's embedded client for a seamless in-app experience:
+
+```typescript
+// React example with Persona embedded client
+import React, { useEffect, useState } from 'react';
+import { Client } from 'persona';
+
+function EmbeddedVerificationFlow({ inquiryId, onComplete }) {
+  const [client, setClient] = useState(null);
+
+  useEffect(() => {
+    // Initialize Persona embedded client
+    const personaClient = new Client({
+      inquiryId: inquiryId,
+      environment: 'production', // or 'sandbox'
+      onReady: () => console.log('Persona is ready'),
+      onComplete: ({ inquiryId, status, fields }) => {
+        console.log(`Completed inquiry ${inquiryId} with status ${status}`);
+        onComplete(inquiryId, status);
+      },
+      onCancel: ({ inquiryId, sessionToken }) => {
+        console.log(`Cancelled inquiry ${inquiryId}`);
+      },
+      onError: (error) => {
+        console.error('Persona error:', error);
+      }
+    });
+
+    personaClient.open();
+    setClient(personaClient);
+
+    return () => {
+      if (personaClient) {
+        personaClient.destroy();
+      }
+    };
+  }, [inquiryId, onComplete]);
+
+  return <div id="persona-container">Loading verification...</div>;
+}
+```
+
+#### Option 2: Redirect Flow
+
+Redirect users to Persona's hosted verification page:
+
+```typescript
+// React example with redirect
 import React, { useEffect } from 'react';
 
-function VerificationFlow({ sessionUrl }) {
+function RedirectVerificationFlow({ sessionUrl }) {
   useEffect(() => {
-    // Open Persona flow in modal or redirect
+    // Redirect to Persona hosted page
     window.location.href = sessionUrl;
-    
-    // Or use Persona's embedded client
-    // See: https://docs.withpersona.com/docs/embedded-flow
   }, [sessionUrl]);
 
-  return <div>Loading verification...</div>;
+  return <div>Redirecting to verification...</div>;
 }
+```
+
+#### Option 3: Custom Domain (fibonrose.withpersona.com)
+
+Configure a custom domain for a branded experience:
+
+1. **Setup in Persona Dashboard**:
+   - Go to Settings → Custom Domain
+   - Add domain: `fibonrose.withpersona.com`
+   - Follow DNS configuration instructions
+
+2. **Update redirect URIs**:
+```typescript
+const personaResponse = await fetch('/api/v1/persona/inquiries', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${deafAuthToken}`
+  },
+  body: JSON.stringify({
+    userId: authenticatedUserId,
+    redirectUri: 'https://fibonrose.withpersona.com/verification-complete'
+  })
+});
 ```
 
 ### Handle Completion

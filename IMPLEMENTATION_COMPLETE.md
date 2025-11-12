@@ -57,6 +57,21 @@ Created `.github/workflows/dev-deploy.yml` with:
 - Event processing
 - Connection testing
 
+#### Multiple Integration Options
+FibonroseTrust supports flexible Persona integration:
+
+1. **Embedded Client**: Seamless in-app verification with Persona's JavaScript SDK
+2. **Redirect Flow**: Redirect users to Persona's hosted verification page
+3. **Custom Domain**: Branded experience at fibonrose.withpersona.com
+
+#### Authentication Flow
+- Users authenticate with DeafAUTH before Persona verification
+- DeafAUTH session token required for all Persona API calls
+- Automatic trust score updates upon verification completion
+- Webhook signature verification
+- Event processing
+- Connection testing
+
 #### API Controller (`server/controllers/api/v1/persona.controller.ts`)
 - Create inquiry endpoint
 - Get inquiry status endpoint

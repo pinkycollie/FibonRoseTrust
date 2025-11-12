@@ -129,6 +129,9 @@ FibonroseTrust integrates with [Persona](https://withpersona.com) for comprehens
 - Biometric verification (selfies, liveness detection)
 - Continuous monitoring and risk assessment
 - Webhook integration for real-time updates
+- Custom domain support (fibonrose.withpersona.com)
+
+**Authentication**: Users must first authenticate with DeafAUTH before initiating Persona verification.
 
 For detailed Persona integration documentation, see [docs/PERSONA_INTEGRATION.md](docs/PERSONA_INTEGRATION.md).
 
