@@ -123,15 +123,26 @@ For detailed deployment documentation, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.
 
 ### Identity Verification with Persona
 
-FibonroseTrust integrates with [Persona](https://withpersona.com) for comprehensive identity verification:
+FibonroseTrust integrates with [Persona](https://withpersona.com) for **specific identity verification scenarios**:
 
+**When Persona is Used:**
+- Verifying professional licenses and certifications
+- Validating identity documents (passports, driver's licenses)
+- Specific roles requiring verified credentials (interpreters, healthcare providers)
+- Scenarios like vocational rehabilitation requiring verified documentation
+
+**What Persona is NOT used for:**
+- General authentication (use DeafAUTH)
+- Normal app activities (developing, browsing)
+- GitHub/Google authentication
+
+**Architecture**: Users authenticate with DeafAUTH for general access. Persona is only invoked when specific identity verification is required.
+
+**Features:**
 - Document verification (passports, driver's licenses, etc.)
 - Biometric verification (selfies, liveness detection)
-- Continuous monitoring and risk assessment
-- Webhook integration for real-time updates
+- License/certification validation
 - Custom domain support (fibonrose.withpersona.com)
-
-**Authentication**: Users must first authenticate with DeafAUTH before initiating Persona verification.
 
 For detailed Persona integration documentation, see [docs/PERSONA_INTEGRATION.md](docs/PERSONA_INTEGRATION.md).
 

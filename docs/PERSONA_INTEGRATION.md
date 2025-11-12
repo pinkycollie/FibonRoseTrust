@@ -2,38 +2,64 @@
 
 ## Overview
 
-FibonroseTrust integrates with [Persona](https://withpersona.com) to provide comprehensive identity verification services. Persona enables secure, compliant identity verification through document scanning, biometric checks, and continuous monitoring.
+FibonroseTrust integrates with [Persona](https://withpersona.com) to provide identity verification services **for specific sensitive scenarios only**. Persona is NOT used for general authentication or normal app activities.
 
-**Important**: Users must authenticate with DeafAUTH before accessing Persona verification features.
+### When to Use Persona
+
+Persona verification is **only required** for specific circumstances involving:
+- **Professional Licenses**: Verifying professional certifications and licenses
+- **Identity Documents**: Confirming government-issued IDs (driver's license, passport)
+- **Certifications**: Validating professional or educational certifications
+- **Specific Roles**: Certain roles requiring verified identity (interpreters, healthcare providers, etc.)
+
+### Use Case Example
+
+**Vocational Rehabilitation Scenario**: When a vocational rehabilitation agency needs verified documentation:
+1. User authenticates with DeafAUTH (standard login)
+2. System detects need for verified documents
+3. FibonroseTrust initiates Persona verification workflow
+4. User submits required documents through Persona
+5. Verified documents are securely shared with vocational rehabilitation agency
+
+**What Persona is NOT used for:**
+- General login/authentication (use DeafAUTH)
+- Normal app activities (developing, browsing, etc.)
+- GitHub/Google authentication (handled separately)
+- Regular user registration
+
+## Architecture
+
+```
+DeafAUTH (Primary Authentication)
+    ↓
+FibonroseTrust Platform
+    ↓
+Persona (Only when identity verification needed)
+    ↓
+Verified Documents/Licenses
+```
 
 ## Features
 
 - **Identity Verification**: Verify user identities through government-issued IDs
 - **Document Verification**: Scan and verify passports, driver's licenses, and other documents
 - **Biometric Verification**: Selfie verification and liveness detection
-- **Continuous Monitoring**: Ongoing verification and risk assessment
+- **License/Certification Verification**: Validate professional credentials
 - **Webhook Integration**: Real-time status updates via webhooks
-- **DeafAUTH Integration**: Secure authentication flow for deaf users
 - **Custom Domain**: Branded experience at fibonrose.withpersona.com
 
 ## Prerequisites
 
 ### DeafAUTH Authentication
 
-All users must authenticate with DeafAUTH before initiating Persona verification:
-
-1. **DeafAUTH Session**: Users first create a DeafAUTH session
-2. **Token Generation**: DeafAUTH provides a session token
-3. **Persona Access**: Token is used to authorize Persona API calls
-
-Example authentication flow:
+Users authenticate with DeafAUTH for general platform access. Persona is only invoked when specific verification is needed:
 
 ```typescript
-// Step 1: Create DeafAUTH session
+// Step 1: User logs in with DeafAUTH (standard authentication)
 const deafAuthResponse = await fetch('/api/deaf-auth/sessions?userId=123');
 const { sessionId, token, expiresAt } = await deafAuthResponse.json();
 
-// Step 2: Use token for Persona operations
+// Step 2: When verification is needed, use token to initiate Persona
 const headers = {
   'Authorization': `Bearer ${token}`,
   'Content-Type': 'application/json'
@@ -80,6 +106,66 @@ initPersona({
   templateId: process.env.PERSONA_TEMPLATE_ID
 });
 ```
+
+## Conceptual Example: Vocational Rehabilitation
+
+This example demonstrates how Persona verification works in a real-world scenario:
+
+### Scenario
+A deaf user needs to submit verified documentation to a vocational rehabilitation agency for employment services.
+
+### Workflow
+
+```typescript
+// Step 1: User logs into FibonroseTrust with DeafAUTH (normal login)
+const loginResponse = await fetch('/api/deaf-auth/sessions', {
+  method: 'POST',
+  body: JSON.stringify({ username, password })
+});
+const { token } = await loginResponse.json();
+
+// Step 2: User requests to share verified documents with vocational rehab
+// System detects that identity verification is needed
+const needsVerification = await checkVerificationStatus(userId);
+
+if (!needsVerification.hasVerifiedId || !needsVerification.hasVerifiedLicense) {
+  // Step 3: Initiate Persona verification workflow
+  const personaInquiry = await fetch('/api/v1/persona/inquiries', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      userId: userId,
+      verificationType: 'vocational_rehab',
+      documentsNeeded: ['drivers_license', 'professional_certificate'],
+      redirectUri: 'https://fibonrose.withpersona.com/verification-complete'
+    })
+  });
+  
+  // Step 4: User completes Persona verification (uploads ID, documents)
+  // Persona webhook notifies FibonroseTrust of completion
+}
+
+// Step 5: Once verified, documents can be securely shared
+const shareResponse = await fetch('/api/vocational-rehab/share-documents', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${token}` },
+  body: JSON.stringify({
+    agencyId: vocationalRehabAgencyId,
+    documentTypes: ['identity', 'certifications']
+  })
+});
+
+// Vocational rehab receives verified documents quickly and securely
+```
+
+### Key Points
+- User only goes through Persona when **specific verification is required**
+- General platform usage (login, browsing, developing) uses **DeafAUTH only**
+- Persona adds verified credential layer for sensitive scenarios
+- Documents remain secure within FibonroseTrust until explicitly shared
 
 ## API Endpoints
 

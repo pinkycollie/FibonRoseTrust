@@ -49,6 +49,21 @@ Created `.github/workflows/dev-deploy.yml` with:
 
 ### 3. Persona Identity Verification Integration
 
+#### Purpose and Scope
+Persona is used **ONLY for specific verification scenarios**, not general authentication:
+
+**Use Cases:**
+- Professional licenses and certifications verification
+- Identity documents (passports, driver's licenses)
+- Specific roles requiring verified credentials (interpreters, healthcare providers, etc.)
+- Scenarios like vocational rehabilitation requiring verified documentation
+
+**NOT used for:**
+- General login/authentication (handled by DeafAUTH)
+- Normal development activities
+- GitHub/Google authentication
+- Regular user registration
+
 #### Service Implementation (`server/services/persona-integration.ts`)
 - Complete Persona API client
 - Inquiry creation and management
@@ -65,8 +80,9 @@ FibonroseTrust supports flexible Persona integration:
 3. **Custom Domain**: Branded experience at fibonrose.withpersona.com
 
 #### Authentication Flow
-- Users authenticate with DeafAUTH before Persona verification
-- DeafAUTH session token required for all Persona API calls
+- **Primary Authentication**: DeafAUTH (for all general platform access)
+- **Verification Trigger**: Persona only invoked when identity verification is specifically required
+- DeafAUTH session token used to authorize Persona API calls
 - Automatic trust score updates upon verification completion
 - Webhook signature verification
 - Event processing
