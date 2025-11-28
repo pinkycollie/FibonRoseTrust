@@ -1,0 +1,340 @@
+{
+  "title": "Integrations API Documentation",
+  "description": "API endpoints for third-party service integrations in the FibonroseTrust system",
+  "version": "1.0.0",
+  "baseUrl": "/api/v1/integrations",
+  "endpoints": [
+    {
+      "path": "/available",
+      "method": "GET",
+      "description": "Get list of available third-party integrations",
+      "responses": {
+        "200": {
+          "description": "List of available integrations",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "string"},
+                    "name": {"type": "string"},
+                    "description": {"type": "string"},
+                    "category": {"type": "string", "enum": ["blockchain", "storage", "authentication", "analytics", "communication"]},
+                    "status": {"type": "string", "enum": ["available", "coming_soon", "deprecated"]},
+                    "requiredTrustLevel": {"type": "integer"},
+                    "features": {"type": "array", "items": {"type": "string"}}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/notion",
+      "method": "GET",
+      "description": "Get Notion integration settings for current user",
+      "responses": {
+        "200": {
+          "description": "Notion integration settings",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "userId": {"type": "integer"},
+                  "workspaceId": {"type": "string"},
+                  "databaseId": {"type": "string"},
+                  "isActive": {"type": "boolean"},
+                  "lastSynced": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Notion integration not configured"
+        }
+      },
+      "requiresAuth": true
+    },
+    {
+      "path": "/notion",
+      "method": "POST",
+      "description": "Configure Notion integration",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "accessToken": {
+              "type": "string",
+              "description": "Notion API access token",
+              "required": true
+            },
+            "workspaceId": {
+              "type": "string",
+              "description": "Notion workspace ID",
+              "required": true
+            },
+            "databaseId": {
+              "type": "string",
+              "description": "Target database ID",
+              "required": false
+            },
+            "settings": {
+              "type": "object",
+              "description": "Additional integration settings",
+              "required": false
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Notion integration configured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "workspaceId": {"type": "string"},
+                  "isActive": {"type": "boolean"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid integration data"
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 3
+    },
+    {
+      "path": "/xano/test-connection",
+      "method": "POST",
+      "description": "Test connection to Xano API",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "apiKey": {
+              "type": "string",
+              "description": "Xano API key",
+              "required": true
+            },
+            "baseUrl": {
+              "type": "string",
+              "description": "Xano API base URL",
+              "required": false
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Connection test successful",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "connected": {"type": "boolean"},
+                  "metadata": {"type": "object"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "API key is required or connection failed"
+        }
+      },
+      "requiresAuth": true
+    },
+    {
+      "path": "/xano/configure",
+      "method": "POST",
+      "description": "Configure Xano integration for the current user",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "apiKey": {
+              "type": "string",
+              "description": "Xano API key",
+              "required": true
+            },
+            "baseUrl": {
+              "type": "string",
+              "description": "Xano API base URL",
+              "required": true
+            },
+            "webhookSecret": {
+              "type": "string",
+              "description": "Secret for webhook verification",
+              "required": false
+            },
+            "aiEnabled": {
+              "type": "boolean",
+              "description": "Enable AI features",
+              "required": false,
+              "default": false
+            },
+            "settings": {
+              "type": "object",
+              "description": "Additional integration settings",
+              "required": false
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Xano integration configured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "baseUrl": {"type": "string"},
+                  "isActive": {"type": "boolean"},
+                  "aiEnabled": {"type": "boolean"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid integration data"
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/web3/status",
+      "method": "GET",
+      "description": "Get Web3 blockchain integration status",
+      "responses": {
+        "200": {
+          "description": "Web3 integration status",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "networks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "chainId": {"type": "integer"},
+                        "status": {"type": "string", "enum": ["active", "inactive", "maintenance"]}
+                      }
+                    }
+                  },
+                  "contracts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "address": {"type": "string"},
+                        "network": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/gcp/status",
+      "method": "GET",
+      "description": "Get Google Cloud Platform integration status",
+      "responses": {
+        "200": {
+          "description": "GCP integration status",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "projectId": {"type": "string"},
+                  "cloudFunctions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "status": {"type": "string"},
+                        "url": {"type": "string"}
+                      }
+                    }
+                  },
+                  "pubsubTopics": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "status": {"type": "string"}
+                      }
+                    }
+                  },
+                  "storageBuckets": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "status": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 3
+    }
+  ]
+}

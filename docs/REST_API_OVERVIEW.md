@@ -4,10 +4,26 @@
 
 The FibonroseTrust REST API system provides a comprehensive set of endpoints for interacting with the FibonroseTrust Decentralized Identity Framework. This API follows RESTful design principles and provides consistent response formats, error handling, and authentication mechanisms.
 
+## Features
+
+- **User Management**: Create, read, update user profiles
+- **Trust Scoring**: Fibonacci-based trust level system with 21 levels
+- **Verification System**: Multiple verification types for identity confirmation
+- **NFT Integration**: Digital identity cards as NFTs
+- **Webhook Support**: Universal webhook system for event notifications
+- **Security Framework**: NegraRosa WHY verification and risk assessment
+- **Third-party Integrations**: Xano, Notion, GCP, and Web3 integrations
+
 ## Base URL
 
+**Development:**
 ```
-https://fibonrose.mbtq.dev
+http://localhost:5000/api
+```
+
+**Production:**
+```
+https://fibonrose.mbtquniverse.com/api
 ```
 
 ## API Versioning
@@ -15,7 +31,7 @@ https://fibonrose.mbtq.dev
 The API uses versioning to ensure backward compatibility as new features are added. The current version is v1.
 
 ```
-https://fibonrose.mbtq.dev/v1
+/api/v1
 ```
 
 ## Response Format
