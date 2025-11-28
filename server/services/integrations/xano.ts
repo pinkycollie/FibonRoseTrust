@@ -6,11 +6,6 @@
 
 import axios from 'axios';
 
-interface XanoConfig {
-  apiKey: string;
-  baseUrl: string;
-}
-
 interface NormalizedWebhookData {
   eventType: string;
   source: string;
