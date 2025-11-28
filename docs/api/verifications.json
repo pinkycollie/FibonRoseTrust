@@ -1,0 +1,282 @@
+{
+  "title": "Verification API Documentation",
+  "description": "API endpoints for managing identity verifications in the FibonroseTrust system",
+  "version": "1.0.0",
+  "baseUrl": "/api/v1/verifications",
+  "endpoints": [
+    {
+      "path": "/types",
+      "method": "GET",
+      "description": "Get all verification types available in the system",
+      "responses": {
+        "200": {
+          "description": "List of verification types",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "description": {"type": "string"},
+                    "requiredLevel": {"type": "integer"},
+                    "scoreValue": {"type": "number"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/user/{userId}",
+      "method": "GET",
+      "description": "Get all verifications for a specific user",
+      "parameters": {
+        "path": [
+          {
+            "name": "userId",
+            "type": "integer",
+            "description": "User ID",
+            "required": true
+          }
+        ],
+        "query": [
+          {
+            "name": "status",
+            "type": "string",
+            "description": "Filter by status (PENDING, VERIFIED, REJECTED)",
+            "required": false
+          },
+          {
+            "name": "page",
+            "type": "integer",
+            "description": "Page number for pagination",
+            "required": false,
+            "default": 1
+          },
+          {
+            "name": "limit",
+            "type": "integer",
+            "description": "Number of items per page",
+            "required": false,
+            "default": 10
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "List of user's verifications",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "integer"},
+                    "userId": {"type": "integer"},
+                    "typeId": {"type": "integer"},
+                    "status": {"type": "string", "enum": ["PENDING", "VERIFIED", "REJECTED"]},
+                    "verifiedBy": {"type": "string"},
+                    "createdAt": {"type": "string", "format": "date-time"},
+                    "verifiedAt": {"type": "string", "format": "date-time"},
+                    "data": {"type": "object"}
+                  }
+                }
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "page": {"type": "integer"},
+                      "limit": {"type": "integer"},
+                      "totalItems": {"type": "integer"},
+                      "totalPages": {"type": "integer"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "User not found"
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/",
+      "method": "POST",
+      "description": "Create a new verification request",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "userId": {
+              "type": "integer",
+              "description": "User ID",
+              "required": true
+            },
+            "typeId": {
+              "type": "integer",
+              "description": "Verification type ID",
+              "required": true
+            },
+            "data": {
+              "type": "object",
+              "description": "Verification-specific data",
+              "required": false
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Verification created successfully",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "userId": {"type": "integer"},
+                  "typeId": {"type": "integer"},
+                  "status": {"type": "string"},
+                  "createdAt": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid verification data"
+        },
+        "404": {
+          "description": "User or verification type not found"
+        }
+      },
+      "requiresAuth": true
+    },
+    {
+      "path": "/{id}",
+      "method": "GET",
+      "description": "Get a specific verification by ID",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "integer",
+            "description": "Verification ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Verification details",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "userId": {"type": "integer"},
+                  "typeId": {"type": "integer"},
+                  "status": {"type": "string"},
+                  "verifiedBy": {"type": "string"},
+                  "createdAt": {"type": "string", "format": "date-time"},
+                  "verifiedAt": {"type": "string", "format": "date-time"},
+                  "data": {"type": "object"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Verification not found"
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/{id}/status",
+      "method": "PATCH",
+      "description": "Update verification status",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "integer",
+            "description": "Verification ID",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "New status",
+              "enum": ["PENDING", "VERIFIED", "REJECTED"],
+              "required": true
+            },
+            "verifiedBy": {
+              "type": "string",
+              "description": "Name or ID of verifier",
+              "required": false
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Verification status updated",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "status": {"type": "string"},
+                  "verifiedBy": {"type": "string"},
+                  "verifiedAt": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid status"
+        },
+        "404": {
+          "description": "Verification not found"
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 3
+    }
+  ]
+}

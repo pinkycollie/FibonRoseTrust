@@ -1,0 +1,384 @@
+{
+  "title": "Integrations API Documentation",
+  "description": "API endpoints for internal and external service integrations in the FibonroseTrust system",
+  "version": "1.0.0",
+  "baseUrl": "/api/v1/integrations",
+  "endpoints": [
+    {
+      "path": "/available",
+      "method": "GET",
+      "description": "Get list of available integrations",
+      "responses": {
+        "200": {
+          "description": "List of available integrations",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "string"},
+                    "name": {"type": "string"},
+                    "description": {"type": "string"},
+                    "category": {"type": "string", "enum": ["internal", "blockchain", "storage", "authentication", "analytics", "communication"]},
+                    "status": {"type": "string", "enum": ["available", "coming_soon", "deprecated"]},
+                    "requiredTrustLevel": {"type": "integer"},
+                    "features": {"type": "array", "items": {"type": "string"}}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/smart-webhook/status",
+      "method": "GET",
+      "description": "Get Smart Webhook Intelligence system status and statistics",
+      "responses": {
+        "200": {
+          "description": "Smart Webhook Intelligence status",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "version": {"type": "string"},
+                  "type": {"type": "string", "enum": ["internal"]},
+                  "status": {"type": "string", "enum": ["active", "inactive", "maintenance"]},
+                  "statistics": {
+                    "type": "object",
+                    "properties": {
+                      "totalRules": {"type": "integer"},
+                      "eventHistorySize": {"type": "integer"},
+                      "routingTableSize": {"type": "integer"}
+                    }
+                  },
+                  "capabilities": {"type": "array", "items": {"type": "string"}},
+                  "lastUpdated": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/smart-webhook/rules",
+      "method": "GET",
+      "description": "Get all configured webhook routing rules",
+      "responses": {
+        "200": {
+          "description": "List of routing rules",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "string"},
+                    "name": {"type": "string"},
+                    "pattern": {"type": "string"},
+                    "action": {"type": "string", "enum": ["allow", "block", "transform", "route"]},
+                    "priority": {"type": "integer"},
+                    "metadata": {"type": "object"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/smart-webhook/rules",
+      "method": "POST",
+      "description": "Add a new webhook routing rule",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "string", "description": "Unique rule identifier", "required": true},
+            "name": {"type": "string", "description": "Human-readable rule name", "required": true},
+            "pattern": {"type": "string", "description": "Regex pattern to match event types", "required": true},
+            "action": {"type": "string", "enum": ["allow", "block", "transform", "route"], "required": true},
+            "priority": {"type": "integer", "description": "Rule priority (higher = processed first)", "required": true},
+            "metadata": {"type": "object", "description": "Additional rule metadata", "required": false}
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Rule created successfully",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {"type": "object"}
+            }
+          }
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 8
+    },
+    {
+      "path": "/smart-webhook/history",
+      "method": "GET",
+      "description": "Get recent webhook event history for analysis",
+      "parameters": {
+        "query": [
+          {
+            "name": "limit",
+            "type": "integer",
+            "description": "Number of events to return",
+            "required": false,
+            "default": 100
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Event history",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "eventType": {"type": "string"},
+                    "source": {"type": "string"},
+                    "timestamp": {"type": "string", "format": "date-time"},
+                    "payload": {"type": "object"},
+                    "intelligence": {
+                      "type": "object",
+                      "properties": {
+                        "priority": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+                        "category": {"type": "string"},
+                        "suggestedActions": {"type": "array", "items": {"type": "string"}},
+                        "confidence": {"type": "number"},
+                        "processingTime": {"type": "number"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/notion",
+      "method": "GET",
+      "description": "Get Notion integration settings for current user",
+      "responses": {
+        "200": {
+          "description": "Notion integration settings",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "userId": {"type": "integer"},
+                  "workspaceId": {"type": "string"},
+                  "databaseId": {"type": "string"},
+                  "isActive": {"type": "boolean"},
+                  "lastSynced": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Notion integration not configured"
+        }
+      },
+      "requiresAuth": true
+    },
+    {
+      "path": "/notion",
+      "method": "POST",
+      "description": "Configure Notion integration",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "accessToken": {
+              "type": "string",
+              "description": "Notion API access token",
+              "required": true
+            },
+            "workspaceId": {
+              "type": "string",
+              "description": "Notion workspace ID",
+              "required": true
+            },
+            "databaseId": {
+              "type": "string",
+              "description": "Target database ID",
+              "required": false
+            },
+            "settings": {
+              "type": "object",
+              "description": "Additional integration settings",
+              "required": false
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Notion integration configured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "workspaceId": {"type": "string"},
+                  "isActive": {"type": "boolean"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid integration data"
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 3
+    },
+    {
+      "path": "/web3/status",
+      "method": "GET",
+      "description": "Get Web3 blockchain integration status",
+      "responses": {
+        "200": {
+          "description": "Web3 integration status",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "networks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "chainId": {"type": "integer"},
+                        "status": {"type": "string", "enum": ["active", "inactive", "maintenance"]}
+                      }
+                    }
+                  },
+                  "contracts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "address": {"type": "string"},
+                        "network": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/gcp/status",
+      "method": "GET",
+      "description": "Get Google Cloud Platform integration status",
+      "responses": {
+        "200": {
+          "description": "GCP integration status",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "projectId": {"type": "string"},
+                  "cloudFunctions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "status": {"type": "string"},
+                        "url": {"type": "string"}
+                      }
+                    }
+                  },
+                  "pubsubTopics": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "status": {"type": "string"}
+                      }
+                    }
+                  },
+                  "storageBuckets": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "status": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 3
+    }
+  ]
+}
