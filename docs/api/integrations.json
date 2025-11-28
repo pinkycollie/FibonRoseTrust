@@ -1,13 +1,13 @@
 {
   "title": "Integrations API Documentation",
-  "description": "API endpoints for third-party service integrations in the FibonroseTrust system",
+  "description": "API endpoints for internal and external service integrations in the FibonroseTrust system",
   "version": "1.0.0",
   "baseUrl": "/api/v1/integrations",
   "endpoints": [
     {
       "path": "/available",
       "method": "GET",
-      "description": "Get list of available third-party integrations",
+      "description": "Get list of available integrations",
       "responses": {
         "200": {
           "description": "List of available integrations",
@@ -24,7 +24,7 @@
                     "id": {"type": "string"},
                     "name": {"type": "string"},
                     "description": {"type": "string"},
-                    "category": {"type": "string", "enum": ["blockchain", "storage", "authentication", "analytics", "communication"]},
+                    "category": {"type": "string", "enum": ["internal", "blockchain", "storage", "authentication", "analytics", "communication"]},
                     "status": {"type": "string", "enum": ["available", "coming_soon", "deprecated"]},
                     "requiredTrustLevel": {"type": "integer"},
                     "features": {"type": "array", "items": {"type": "string"}}
@@ -36,6 +36,159 @@
         }
       },
       "requiresAuth": false
+    },
+    {
+      "path": "/smart-webhook/status",
+      "method": "GET",
+      "description": "Get Smart Webhook Intelligence system status and statistics",
+      "responses": {
+        "200": {
+          "description": "Smart Webhook Intelligence status",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "version": {"type": "string"},
+                  "type": {"type": "string", "enum": ["internal"]},
+                  "status": {"type": "string", "enum": ["active", "inactive", "maintenance"]},
+                  "statistics": {
+                    "type": "object",
+                    "properties": {
+                      "totalRules": {"type": "integer"},
+                      "eventHistorySize": {"type": "integer"},
+                      "routingTableSize": {"type": "integer"}
+                    }
+                  },
+                  "capabilities": {"type": "array", "items": {"type": "string"}},
+                  "lastUpdated": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": false
+    },
+    {
+      "path": "/smart-webhook/rules",
+      "method": "GET",
+      "description": "Get all configured webhook routing rules",
+      "responses": {
+        "200": {
+          "description": "List of routing rules",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "string"},
+                    "name": {"type": "string"},
+                    "pattern": {"type": "string"},
+                    "action": {"type": "string", "enum": ["allow", "block", "transform", "route"]},
+                    "priority": {"type": "integer"},
+                    "metadata": {"type": "object"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/smart-webhook/rules",
+      "method": "POST",
+      "description": "Add a new webhook routing rule",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "string", "description": "Unique rule identifier", "required": true},
+            "name": {"type": "string", "description": "Human-readable rule name", "required": true},
+            "pattern": {"type": "string", "description": "Regex pattern to match event types", "required": true},
+            "action": {"type": "string", "enum": ["allow", "block", "transform", "route"], "required": true},
+            "priority": {"type": "integer", "description": "Rule priority (higher = processed first)", "required": true},
+            "metadata": {"type": "object", "description": "Additional rule metadata", "required": false}
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Rule created successfully",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {"type": "object"}
+            }
+          }
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 8
+    },
+    {
+      "path": "/smart-webhook/history",
+      "method": "GET",
+      "description": "Get recent webhook event history for analysis",
+      "parameters": {
+        "query": [
+          {
+            "name": "limit",
+            "type": "integer",
+            "description": "Number of events to return",
+            "required": false,
+            "default": 100
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Event history",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "eventType": {"type": "string"},
+                    "source": {"type": "string"},
+                    "timestamp": {"type": "string", "format": "date-time"},
+                    "payload": {"type": "object"},
+                    "intelligence": {
+                      "type": "object",
+                      "properties": {
+                        "priority": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+                        "category": {"type": "string"},
+                        "suggestedActions": {"type": "array", "items": {"type": "string"}},
+                        "confidence": {"type": "number"},
+                        "processingTime": {"type": "number"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
     },
     {
       "path": "/notion",
@@ -125,115 +278,6 @@
       },
       "requiresAuth": true,
       "minTrustLevel": 3
-    },
-    {
-      "path": "/xano/test-connection",
-      "method": "POST",
-      "description": "Test connection to Xano API",
-      "parameters": {
-        "body": {
-          "type": "object",
-          "properties": {
-            "apiKey": {
-              "type": "string",
-              "description": "Xano API key",
-              "required": true
-            },
-            "baseUrl": {
-              "type": "string",
-              "description": "Xano API base URL",
-              "required": false
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "Connection test successful",
-          "schema": {
-            "type": "object",
-            "properties": {
-              "success": {"type": "boolean"},
-              "message": {"type": "string"},
-              "data": {
-                "type": "object",
-                "properties": {
-                  "connected": {"type": "boolean"},
-                  "metadata": {"type": "object"}
-                }
-              }
-            }
-          }
-        },
-        "400": {
-          "description": "API key is required or connection failed"
-        }
-      },
-      "requiresAuth": true
-    },
-    {
-      "path": "/xano/configure",
-      "method": "POST",
-      "description": "Configure Xano integration for the current user",
-      "parameters": {
-        "body": {
-          "type": "object",
-          "properties": {
-            "apiKey": {
-              "type": "string",
-              "description": "Xano API key",
-              "required": true
-            },
-            "baseUrl": {
-              "type": "string",
-              "description": "Xano API base URL",
-              "required": true
-            },
-            "webhookSecret": {
-              "type": "string",
-              "description": "Secret for webhook verification",
-              "required": false
-            },
-            "aiEnabled": {
-              "type": "boolean",
-              "description": "Enable AI features",
-              "required": false,
-              "default": false
-            },
-            "settings": {
-              "type": "object",
-              "description": "Additional integration settings",
-              "required": false
-            }
-          }
-        }
-      },
-      "responses": {
-        "201": {
-          "description": "Xano integration configured",
-          "schema": {
-            "type": "object",
-            "properties": {
-              "success": {"type": "boolean"},
-              "message": {"type": "string"},
-              "data": {
-                "type": "object",
-                "properties": {
-                  "id": {"type": "integer"},
-                  "baseUrl": {"type": "string"},
-                  "isActive": {"type": "boolean"},
-                  "aiEnabled": {"type": "boolean"}
-                }
-              }
-            }
-          }
-        },
-        "400": {
-          "description": "Invalid integration data"
-        }
-      },
-      "requiresAuth": true,
-      "minTrustLevel": 5
     },
     {
       "path": "/web3/status",

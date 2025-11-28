@@ -1,11 +1,15 @@
 /**
- * Xano Service
+ * Smart Webhook Service
  * 
- * Note: This file has been deprecated as a different integration approach is being used.
- * The Xano integration functionality has been moved to server/services/integrations/xano.ts
+ * This module re-exports the Smart Webhook Intelligence system
+ * for backward compatibility with existing imports.
+ * 
+ * The Smart Webhook Intelligence is an internal, self-contained
+ * webhook processing engine that replaces external third-party dependencies.
  */
 
-export const xanoService = {
-  deprecated: true,
-  message: 'Xano service has been deprecated. Use the integration service instead.'
-};
+export { SmartWebhookIntelligence, XanoIntegration } from './integrations/xano';
+
+// Default export for convenience
+import { SmartWebhookIntelligence } from './integrations/xano';
+export default SmartWebhookIntelligence;
