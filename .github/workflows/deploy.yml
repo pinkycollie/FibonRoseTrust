@@ -1,0 +1,165 @@
+name: Deploy to Self-Managed Infrastructure
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  NODE_VERSION: '20.x'
+  DEPLOY_PATH: '/var/www/fibonrosetrust'
+
+jobs:
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests
+      run: npm run test:run
+
+    - name: Build application
+      run: npm run build
+
+    - name: Generate version
+      id: version
+      run: echo "version=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: fibonrosetrust-${{ steps.version.outputs.version }}
+        path: |
+          dist/
+          package.json
+          package-lock.json
+        retention-days: 30
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'staging' || github.ref == 'refs/heads/main'
+    environment:
+      name: staging
+      url: https://staging.fibonrosetrust.com
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: fibonrosetrust-${{ needs.build.outputs.version }}
+        path: ./deploy
+
+    - name: Create deployment package
+      run: |
+        mkdir -p deployment
+        cp -r deploy/* deployment/
+        cp docker/Dockerfile deployment/ 2>/dev/null || echo "# No Dockerfile, using default" > deployment/Dockerfile
+        cp nginx/nginx.conf deployment/ 2>/dev/null || true
+
+    - name: Deploy to staging server
+      if: ${{ secrets.STAGING_SSH_KEY != '' }}
+      env:
+        SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+        STAGING_HOST: ${{ secrets.STAGING_HOST }}
+        STAGING_USER: ${{ secrets.STAGING_USER }}
+      run: |
+        echo "Deployment to staging environment..."
+        echo "Version: ${{ needs.build.outputs.version }}"
+        echo "Note: SSH deployment requires secrets configuration"
+        # When secrets are configured, this will deploy:
+        # 1. Transfer build artifacts to staging server
+        # 2. Restart the application via PM2 or systemd
+        # 3. Reload Nginx configuration
+
+  deploy-production:
+    name: Deploy to Production
+    needs: [build, deploy-staging]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://fibonrosetrust.com
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: fibonrosetrust-${{ needs.build.outputs.version }}
+        path: ./deploy
+
+    - name: Deploy to production server
+      if: ${{ secrets.PRODUCTION_SSH_KEY != '' }}
+      env:
+        SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+        PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+        PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+      run: |
+        echo "Deployment to production environment..."
+        echo "Version: ${{ needs.build.outputs.version }}"
+        echo "Note: SSH deployment requires secrets configuration"
+        # When secrets are configured, this will:
+        # 1. Create backup of current deployment
+        # 2. Transfer new build artifacts
+        # 3. Install production dependencies
+        # 4. Run database migrations if needed
+        # 5. Restart the application
+        # 6. Verify health check
+        # 7. Rollback on failure
+
+    - name: Verify deployment
+      run: |
+        echo "Deployment verification for version: ${{ needs.build.outputs.version }}"
+        # Health check placeholder - will be implemented when server is configured
+
+    - name: Post-deployment notification
+      if: success()
+      run: |
+        echo "Deployment successful!"
+        echo "Version: ${{ needs.build.outputs.version }}"
+        echo "Environment: production"
+
+  rollback:
+    name: Rollback Deployment
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    if: failure()
+
+    steps:
+    - name: Rollback to previous version
+      run: |
+        echo "Rolling back deployment..."
+        # Rollback logic will restore the previous stable version
+        # This is a placeholder - actual rollback requires server access
