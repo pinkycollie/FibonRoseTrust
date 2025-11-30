@@ -20,6 +20,16 @@ const API_BASE_PATH = '/api';
 // Register API version routers
 apiRouter.use('/v1', apiV1Router);
 
+// Health check endpoint for container orchestration
+apiRouter.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: API_VERSION,
+    uptime: process.uptime()
+  });
+});
+
 // Default route redirects to latest version
 apiRouter.get('/', (req: Request, res: Response) => {
   res.redirect('/api/v1');
