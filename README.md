@@ -12,24 +12,69 @@ The Fibonrose Trust is an AI-driven comprehensive verification and trust system 
 
 This AI-enhanced verification system addresses critical gaps in professional verification while creating an intelligent ecosystem that learns and adapts to serve the deaf community's evolving needs.
 
-## AI-Powered Architecture
+## Unified Repository
 
-### Backend Infrastructure
+This repository consolidates multiple Fibonrose projects into a single, maintainable codebase:
+
+- **Frontend**: React-based UI with accessibility-first design
+- **Backend**: Express.js REST API with TypeScript
+- **Engine**: Trust scoring and verification algorithms
+- **DeafFirst Integration**: Accessibility modules for the deaf community
+- **PinkSync Integration**: Visual feedback and notification system
+
+## Self-Managed Infrastructure
+
+### Technology Stack
+
 ```yaml
 Technology_Stack:
-  Database: "Supabase (PostgreSQL + Real-time)"
-  AI_Engine: "Custom ML Models + OpenAI Integration"
-  Backend: "Node.js/TypeScript + Supabase Edge Functions"
-  Authentication: "Supabase Auth + DeafAUTH Integration"
-  Real_Time: "Supabase Realtime Subscriptions"
-  AI_Services: "Vector Embeddings + Semantic Search"
+  Hosting: "Self-managed VPS with Nginx"
+  CI/CD: "GitHub Actions"
+  Database: "PostgreSQL (self-managed)"
+  AI_Engine: "Local AI (self-hosted)"
+  Backend: "Node.js/TypeScript + Express"
+  Authentication: "Auth0 + DeafAUTH Integration"
   
 AI_Components:
-  Professional_Classification: "Multi-label classification model"
-  Trust_Scoring: "Ensemble ML algorithms"
-  Matching_Engine: "Vector similarity + collaborative filtering"
-  Fraud_Detection: "Anomaly detection + pattern recognition"
-  Quality_Prediction: "Performance forecasting models"
+  Professional_Classification: "Local AI classification models"
+  Trust_Scoring: "Fibonacci-based ensemble algorithms"
+  Matching_Engine: "Semantic similarity matching"
+  Accessibility_AI: "Sign language recognition & captioning"
+```
+
+### Infrastructure Benefits
+
+- **Cost Reduction**: 60-80% reduction compared to cloud services
+- **Data Privacy**: Full control over data storage and processing
+- **Performance**: Reduced latency with local AI inference
+- **Independence**: No vendor lock-in
+
+For migration details, see [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md).
+
+## Project Structure
+
+```
+FibonRoseTrust/
+├── client/                 # React frontend
+│   └── src/
+│       ├── components/     # UI components
+│       ├── pages/          # Page components
+│       └── hooks/          # Custom React hooks
+├── server/                 # Express backend
+│   ├── controllers/        # API controllers
+│   ├── services/           # Business logic
+│   │   ├── deaf-first-integration.ts
+│   │   ├── pinksync-integration.ts
+│   │   └── universal-webhook.ts
+│   ├── routes.ts           # API routes
+│   └── storage.ts          # Data storage
+├── shared/                 # Shared types and schemas
+├── test/                   # Test suites
+│   ├── utils/              # Utility tests
+│   ├── server/             # Server tests
+│   └── components/         # Component tests
+├── docs/                   # Documentation
+└── .github/workflows/      # CI/CD pipelines
 ```
 
 ## Universal Professional Taxonomy System
@@ -64,9 +109,28 @@ const professionalCategories = {
   financial_services: {
     advisors: ['financial_planners', 'investment_advisors', 'tax_professionals', 'accountants'],
     banking: ['loan_officers', 'bank_tellers', 'credit_counselors', 'mortgage_specialists'],
-    insurance: ['insurance_agents', 'claims_adjust
+    insurance: ['insurance_agents', 'claims_adjusters']
+  }
+};
+```
 
 ## Development
+
+### Getting Started
+
+```bash
+# Install dependencies
+npm install
+
+# Run in development mode
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
 
 ### Testing
 
@@ -91,39 +155,64 @@ npm run test:coverage
 #### Test Coverage
 
 The test suite covers:
-- Fibonacci trust scoring utilities
-- Storage operations (users, verifications, trust scores)
-- Data permission management
-- Utility functions
+- Fibonacci trust scoring utilities (29 tests)
+- Storage operations (users, verifications, trust scores) (11 tests)
+- DeafFirst integration module (25 tests)
+- Utility functions (5 tests)
 
 For detailed testing documentation, see [docs/TESTING.md](docs/TESTING.md).
 
 ### CI/CD Pipeline
 
 The project uses GitHub Actions for continuous integration and deployment:
-- Automated testing on every push and pull request
-- Multi-version Node.js compatibility testing (18.x, 20.x)
-- Code coverage reporting
-- Type checking
-- Build verification
 
-The CI/CD workflow is defined in `.github/workflows/ci.yml`.
+1. **CI Pipeline** (`.github/workflows/ci.yml`)
+   - Automated testing on every push and pull request
+   - Multi-version Node.js compatibility testing (18.x, 20.x)
+   - Code coverage reporting
+   - Type checking
+   - Build verification
 
-### Getting Started
+2. **Deployment Pipeline** (`.github/workflows/deploy.yml`)
+   - Staging and production deployments
+   - Manual deployment triggers
+   - Rollback capability
+   - Health checks
 
-```bash
-# Install dependencies
-npm install
+3. **Local AI Pipeline** (`.github/workflows/local-ai.yml`)
+   - Daily AI model validation
+   - Performance benchmarking
+   - Model update management
 
-# Run in development mode
-npm run dev
+## API Endpoints
 
-# Build for production
-npm run build
+### Core APIs
 
-# Start production server
-npm start
-```
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/user/:id` | GET | Get user by ID |
+| `/api/verification-types` | GET | List verification types |
+| `/api/user/:userId/verifications` | GET | Get user verifications |
+| `/api/user/:userId/trust-score` | GET | Get user trust score |
+
+### DeafFirst APIs
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/users/:userId/accessibility-preferences` | GET/PATCH | Manage accessibility settings |
+| `/api/sign-language/recognize` | POST | Sign language recognition |
+| `/api/captions/process` | POST | Live caption processing |
+| `/api/interpreters/search` | GET | Find interpreters |
+| `/api/community/resources` | GET | Search community resources |
+
+For complete API documentation, see [docs/REST_API_OVERVIEW.md](docs/REST_API_OVERVIEW.md).
+
+## Documentation
+
+- [Migration Guide](docs/MIGRATION_GUIDE.md) - Infrastructure migration instructions
+- [Testing Guide](docs/TESTING.md) - Testing documentation
+- [REST API Overview](docs/REST_API_OVERVIEW.md) - API documentation
+- [DeafFirst Integration](docs/DEAFFIRST_INTEGRATION_SUMMARY.md) - Accessibility features
 
 ## License
 
