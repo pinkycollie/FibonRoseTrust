@@ -1,0 +1,101 @@
+# FibonRose Trust - Kubernetes Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: fibonrose-api-service
+  labels:
+    app: fibonrose
+    component: api
+spec:
+  type: ClusterIP
+  selector:
+    app: fibonrose
+    component: api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
+      protocol: TCP
+---
+# Ingress for external access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fibonrose-ingress
+  labels:
+    app: fibonrose
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+    - hosts:
+        - api.fibonrose.com
+      secretName: fibonrose-tls
+  rules:
+    - host: api.fibonrose.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fibonrose-api-service
+                port:
+                  number: 80
+---
+# Network Policy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: fibonrose-network-policy
+  labels:
+    app: fibonrose
+spec:
+  podSelector:
+    matchLabels:
+      app: fibonrose
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 5000
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432  # PostgreSQL
+        - protocol: TCP
+          port: 443   # HTTPS
+        - protocol: TCP
+          port: 6379  # Redis
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fibonrose-pdb
+  labels:
+    app: fibonrose
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: fibonrose
+      component: api

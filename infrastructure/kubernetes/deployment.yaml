@@ -1,0 +1,150 @@
+# FibonRose Trust - Kubernetes Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fibonrose-api
+  labels:
+    app: fibonrose
+    component: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fibonrose
+      component: api
+  template:
+    metadata:
+      labels:
+        app: fibonrose
+        component: api
+    spec:
+      serviceAccountName: fibonrose-api-sa
+      containers:
+        - name: api
+          image: fibonrose-trust:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "5000"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: fibonrose-secrets
+                  key: database-url
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fibonrose-secrets
+                  key: session-secret
+            - name: AUTH0_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: fibonrose-config
+                  key: auth0-domain
+                  optional: true
+            - name: AUTH0_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: fibonrose-secrets
+                  key: auth0-client-id
+                  optional: true
+            - name: AUTH0_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fibonrose-secrets
+                  key: auth0-client-secret
+                  optional: true
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      restartPolicy: Always
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fibonrose-api-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fibonrose-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fibonrose-api-sa
+  labels:
+    app: fibonrose
+---
+# ConfigMap for non-sensitive configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fibonrose-config
+  labels:
+    app: fibonrose
+data:
+  auth0-domain: ""
+  allowed-origins: "*"
+---
+# Secret template (values should be base64 encoded)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: fibonrose-secrets
+  labels:
+    app: fibonrose
+type: Opaque
+data:
+  # These are placeholder values - replace with actual base64 encoded values
+  database-url: cG9zdGdyZXNxbDovL3VzZXI6cGFzc0Bob3N0OjU0MzIvZGI= # postgresql://user:pass@host:5432/db
+  session-secret: ZGV2LXNlc3Npb24tc2VjcmV0 # dev-session-secret
+  auth0-client-id: ""
+  auth0-client-secret: ""
