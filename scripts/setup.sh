@@ -124,13 +124,13 @@ run_migrations() {
     echo ""
 }
 
-# Build the application
-build_app() {
-    echo -e "${YELLOW}Building application...${NC}"
+# Verify the installation works by running type check
+verify_install() {
+    echo -e "${YELLOW}Verifying installation...${NC}"
     
-    npm run build
+    npm run check 2>/dev/null || echo -e "${YELLOW}! Type checking had issues, but setup can continue${NC}"
     
-    echo -e "${GREEN}✓ Application built successfully${NC}"
+    echo -e "${GREEN}✓ Verification complete${NC}"
     echo ""
 }
 

@@ -18,12 +18,14 @@ INSERT INTO verification_types (name, display_name, description, icon) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- ===========================================
--- Sample Development User (password: 'password')
--- Note: In production, passwords should be properly hashed
+-- Sample Development User
+-- WARNING: These are placeholder password hashes for development ONLY.
+-- For local development, use scripts/setup.sh to create proper user accounts.
+-- NEVER use these in production - they will fail authentication.
 -- ===========================================
 INSERT INTO users (username, password, name, email, role) VALUES
-    ('admin', '$2b$10$demohashedpassword', 'Admin User', 'admin@fibonrose.test', 'admin'),
-    ('testuser', '$2b$10$demohashedpassword', 'Test User', 'test@fibonrose.test', 'user')
+    ('admin', '$2b$10$PLACEHOLDER_HASH_REPLACE_ME', 'Admin User', 'admin@fibonrose.test', 'admin'),
+    ('testuser', '$2b$10$PLACEHOLDER_HASH_REPLACE_ME', 'Test User', 'test@fibonrose.test', 'user')
 ON CONFLICT (username) DO NOTHING;
 
 -- ===========================================

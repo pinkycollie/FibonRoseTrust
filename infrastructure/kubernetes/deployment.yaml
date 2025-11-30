@@ -143,8 +143,9 @@ metadata:
     app: fibonrose
 type: Opaque
 data:
-  # These are placeholder values - replace with actual base64 encoded values
-  database-url: cG9zdGdyZXNxbDovL3VzZXI6cGFzc0Bob3N0OjU0MzIvZGI= # postgresql://user:pass@host:5432/db
-  session-secret: ZGV2LXNlc3Npb24tc2VjcmV0 # dev-session-secret
+  # IMPORTANT: Replace these placeholder values with actual base64-encoded secrets
+  # Use: echo -n "your-value" | base64
+  database-url: cG9zdGdyZXNxbDovL3VzZXI6cGFzc0Bob3N0OjU0MzIvZGI=
+  session-secret: ZGV2LXNlc3Npb24tc2VjcmV0
   auth0-client-id: ""
   auth0-client-secret: ""
