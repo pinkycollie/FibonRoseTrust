@@ -5,9 +5,13 @@
  */
 
 import { Router, Request, Response } from 'express';
+import aiRouter from './ai.controller';
 
 // Create the main router for API v1
 const apiV1Router = Router();
+
+// Register AI routes
+apiV1Router.use('/ai', aiRouter);
 
 // Temporary implementation until all controllers are properly integrated
 apiV1Router.get('/', (req: Request, res: Response) => {
@@ -21,7 +25,8 @@ apiV1Router.get('/', (req: Request, res: Response) => {
       '/nfts',
       '/webhooks',
       '/security',
-      '/integrations'
+      '/integrations',
+      '/ai'
     ],
     status: 'Under active development',
     documentation: '/api/docs'
