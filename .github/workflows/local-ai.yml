@@ -17,6 +17,11 @@ on:
           - validate
           - benchmark
 
+# Limit permissions of the GITHUB_TOKEN for security
+permissions:
+  contents: read
+  actions: read
+
 env:
   NODE_VERSION: '20.x'
   PYTHON_VERSION: '3.11'
@@ -25,6 +30,8 @@ jobs:
   validate-models:
     name: Validate AI Models
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout code
@@ -63,6 +70,8 @@ jobs:
     name: Benchmark AI Performance
     runs-on: ubuntu-latest
     needs: validate-models
+    permissions:
+      contents: read
     if: github.event.inputs.action == 'benchmark' || github.event_name == 'schedule'
 
     steps:
@@ -91,9 +100,10 @@ jobs:
     - name: Generate benchmark report
       run: |
         mkdir -p reports
-        cat > reports/ai-benchmark-$(date +%Y%m%d).json << 'EOF'
+        TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        cat > reports/ai-benchmark-$(date +%Y%m%d).json << EOF
         {
-          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "timestamp": "${TIMESTAMP}",
           "benchmarks": {
             "trust_score_calculation": {
               "avg_latency_ms": 15,
@@ -125,6 +135,8 @@ jobs:
     name: Update AI Models
     runs-on: ubuntu-latest
     needs: validate-models
+    permissions:
+      contents: read
     if: github.event.inputs.action == 'update' || github.event_name == 'schedule'
 
     steps:
@@ -157,6 +169,8 @@ jobs:
     name: Train Custom Models
     runs-on: ubuntu-latest
     needs: validate-models
+    permissions:
+      contents: read
     if: github.event.inputs.action == 'train'
 
     steps:
@@ -201,6 +215,7 @@ jobs:
     name: AI Health Check
     runs-on: ubuntu-latest
     needs: [validate-models, update-models]
+    permissions: {}
     if: always()
 
     steps:
@@ -217,9 +232,10 @@ jobs:
 
     - name: Create health report
       run: |
-        cat > ai-health-report.json << 'EOF'
+        TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        cat > ai-health-report.json << EOF
         {
-          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "timestamp": "${TIMESTAMP}",
           "status": "healthy",
           "components": {
             "local_ai_server": "operational",

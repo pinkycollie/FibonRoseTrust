@@ -50,5 +50,3 @@ export class XanoIntegration {
     };
   }
 }
-
-export const xanoService = new XanoIntegration();

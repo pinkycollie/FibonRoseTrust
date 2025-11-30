@@ -14,6 +14,11 @@ on:
           - production
           - staging
 
+# Limit permissions of the GITHUB_TOKEN for security
+permissions:
+  contents: read
+  actions: read
+
 env:
   NODE_VERSION: '20.x'
   DEPLOY_PATH: '/var/www/fibonrosetrust'
@@ -22,6 +27,8 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
 
@@ -64,6 +71,8 @@ jobs:
     name: Deploy to Staging
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     if: github.event.inputs.environment == 'staging' || github.ref == 'refs/heads/main'
     environment:
       name: staging
@@ -105,6 +114,8 @@ jobs:
     name: Deploy to Production
     needs: [build, deploy-staging]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     if: github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main'
     environment:
       name: production
@@ -155,6 +166,7 @@ jobs:
     name: Rollback Deployment
     needs: deploy-production
     runs-on: ubuntu-latest
+    permissions: {}
     if: failure()
 
     steps:
