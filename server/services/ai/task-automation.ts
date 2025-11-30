@@ -3,6 +3,8 @@
  * Workflow automation for VR clients using Make.com and Zapier-like integrations
  */
 
+import { generateTimestampedId } from './utils';
+
 export interface WorkflowStep {
   id: string;
   name: string;
@@ -120,7 +122,7 @@ export class TaskAutomation {
    * Setup document automation workflow
    */
   async setupDocumentAutomation(clientId: string): Promise<Workflow> {
-    const workflowId = `doc_workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const workflowId = generateTimestampedId('doc_workflow');
 
     const workflow: Workflow = {
       id: workflowId,
@@ -197,7 +199,7 @@ export class TaskAutomation {
    */
   async setupFormFillingAutomation(clientId: string): Promise<AutomationScenario> {
     return {
-      id: `form_${Date.now()}`,
+      id: generateTimestampedId('form'),
       name: 'Automated Form Filling',
       trigger: 'document_requires_completion',
       actions: [
@@ -217,7 +219,7 @@ export class TaskAutomation {
    * Setup communication automation flows
    */
   async setupCommunicationFlows(clientProfile: ClientProfile): Promise<Workflow> {
-    const workflowId = `comm_workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const workflowId = generateTimestampedId('comm_workflow');
 
     const communicationChannel = this.getCommunicationChannel(clientProfile.preferredCommunication);
 
@@ -340,7 +342,7 @@ export class TaskAutomation {
    * Setup progress tracking automation
    */
   async setupTrackingAutomation(clientId: string): Promise<Workflow> {
-    const workflowId = `track_workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const workflowId = generateTimestampedId('track_workflow');
 
     const workflow: Workflow = {
       id: workflowId,
@@ -422,7 +424,7 @@ export class TaskAutomation {
    * Setup report generation automation
    */
   async setupReportGeneration(clientId: string): Promise<Workflow> {
-    const workflowId = `report_workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const workflowId = generateTimestampedId('report_workflow');
 
     const workflow: Workflow = {
       id: workflowId,
@@ -518,7 +520,7 @@ export class TaskAutomation {
       throw new Error(`Workflow ${workflowId} is not active`);
     }
 
-    const executionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const executionId = generateTimestampedId('exec');
 
     const execution: WorkflowExecution = {
       id: executionId,

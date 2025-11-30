@@ -3,6 +3,8 @@
  * Coordinates services with business partners for VR clients
  */
 
+import { generateTimestampedId } from './utils';
+
 export interface Partner {
   id: string;
   name: string;
@@ -173,7 +175,7 @@ export class PartnershipAutomation {
    * Match client needs to available services and partners
    */
   async matchServices(clientNeeds: ClientNeeds): Promise<ServicePlan> {
-    const servicePlanId = `plan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const servicePlanId = generateTimestampedId('plan');
     const matchedServices: ServicePlan['services'] = [];
 
     let priority = 1;
@@ -352,7 +354,7 @@ export class PartnershipAutomation {
     timeline: ServiceTimeline;
     partnerId: string;
   }): Promise<ServiceRequest> {
-    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const requestId = generateTimestampedId('req');
 
     const serviceRequest: ServiceRequest = {
       id: requestId,
@@ -485,7 +487,7 @@ export class PartnershipAutomation {
    * Register a new partner
    */
   registerPartner(partner: Omit<Partner, 'id'>): Partner {
-    const id = `partner_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateTimestampedId('partner');
     const newPartner: Partner = { ...partner, id };
     
     this.partners.set(id, newPartner);

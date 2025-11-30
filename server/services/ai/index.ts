@@ -3,6 +3,7 @@
  * Central export for all AI-powered services
  */
 
+export * from './utils';
 export * from './vr-business-ai';
 export * from './task-automation';
 export * from './adaptive-learning';

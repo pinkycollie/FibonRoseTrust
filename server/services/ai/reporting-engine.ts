@@ -3,6 +3,8 @@
  * Creates required VR documentation and progress reports
  */
 
+import { generateTimestampedId } from './utils';
+
 export interface ProgressMetric {
   name: string;
   value: number;
@@ -121,7 +123,7 @@ export class ReportingEngine {
     periodEnd: string;
     reportType: VRComplianceReport['reportType'];
   }): Promise<VRComplianceReport> {
-    const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const reportId = generateTimestampedId('report');
 
     const progressMetrics = this.calculateProgress(params.clientId, params.periodStart, params.periodEnd);
     const milestones = this.trackMilestones(params.clientId, params.periodStart, params.periodEnd);

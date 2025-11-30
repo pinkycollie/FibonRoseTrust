@@ -4,6 +4,8 @@
  * Supports disability-specific accommodations and accessibility features
  */
 
+import { generateTimestampedId } from './utils';
+
 export type DisabilityType = 'visual_impairment' | 'hearing_impairment' | 'mobility_impairment' | 'cognitive_disability';
 
 export interface InterviewQuestion {
@@ -276,7 +278,7 @@ export class VRBusinessAI {
     }
 
     const questions = this.getInterviewQuestions(client.disabilityType);
-    const sessionId = `interview_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const sessionId = generateTimestampedId('interview');
 
     const session: InterviewSession = {
       id: sessionId,
@@ -373,7 +375,7 @@ export class VRBusinessAI {
 
     // In production, this would call OpenAI or another AI service
     // For now, we generate a template-based plan
-    const businessPlanId = `bp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const businessPlanId = generateTimestampedId('bp');
     
     const businessPlan: BusinessPlan = {
       id: businessPlanId,

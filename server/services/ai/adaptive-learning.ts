@@ -3,6 +3,8 @@
  * Generates personalized learning modules based on client needs and accessibility requirements
  */
 
+import { generateTimestampedId } from './utils';
+
 export type LearningStyle = 'visual' | 'auditory' | 'reading_writing' | 'kinesthetic';
 export type ContentFormat = 'video' | 'audio' | 'text' | 'interactive';
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -234,7 +236,7 @@ export class AdaptiveLearningSystem {
     const modules = await this.aiGenerateModules(clientAssessment);
     const sequencedModules = this.sequenceModules(modules);
 
-    const pathId = `path_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const pathId = generateTimestampedId('path');
 
     // Calculate estimated completion date
     const totalDuration = sequencedModules.reduce((sum, m) => sum + m.duration, 0);
@@ -371,7 +373,7 @@ export class AdaptiveLearningSystem {
   ): LearningModule {
     const adaptedModule: LearningModule = {
       ...module,
-      id: `${module.id}_adapted_${Date.now()}`,
+      id: `${module.id}_adapted_${generateTimestampedId('')}`,
       learningStyle,
       accessibilityFeatures: [...module.accessibilityFeatures, ...accessibilityFeatures],
       content: module.content.filter(c => contentFormats.includes(c.type))
@@ -395,7 +397,7 @@ export class AdaptiveLearningSystem {
     level: DifficultyLevel
   ): LearningModule {
     return {
-      id: `goal_${goal.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}`,
+      id: generateTimestampedId(`goal_${goal.replace(/\s+/g, '_').toLowerCase()}`),
       title: `Achieving: ${goal}`,
       description: `Targeted learning module to help you achieve your goal: ${goal}`,
       businessType: 'goal_specific',
@@ -426,7 +428,7 @@ export class AdaptiveLearningSystem {
       ],
       assessments: [
         {
-          id: `goal_assess_${Date.now()}`,
+          id: generateTimestampedId('goal_assess'),
           type: 'self_reflection',
           title: 'Progress Reflection',
           accessibilityOptions: {
@@ -518,7 +520,7 @@ export class AdaptiveLearningSystem {
    */
   private generateCaptionedVideo(module: LearningModule): ModuleContent {
     return {
-      id: `video_${module.id}_${Date.now()}`,
+      id: generateTimestampedId(`video_${module.id}`),
       type: 'video',
       title: `${module.title} - Video`,
       url: `/learning/videos/${module.id}.mp4`,
@@ -537,7 +539,7 @@ export class AdaptiveLearningSystem {
    */
   private createAudioDescription(module: LearningModule): ModuleContent {
     return {
-      id: `audio_${module.id}_${Date.now()}`,
+      id: generateTimestampedId(`audio_${module.id}`),
       type: 'audio',
       title: `${module.title} - Audio`,
       url: `/learning/audio/${module.id}.mp3`,
@@ -553,7 +555,7 @@ export class AdaptiveLearningSystem {
    */
   private formatAccessibleText(module: LearningModule): ModuleContent {
     return {
-      id: `text_${module.id}_${Date.now()}`,
+      id: generateTimestampedId(`text_${module.id}`),
       type: 'text',
       title: `${module.title} - Reading Material`,
       text: `Accessible text content for ${module.title}. ${module.description}`,
@@ -570,7 +572,7 @@ export class AdaptiveLearningSystem {
    */
   private createAdaptiveExercises(module: LearningModule, _progress: LearningProgress): ModuleContent {
     return {
-      id: `interactive_${module.id}_${Date.now()}`,
+      id: generateTimestampedId(`interactive_${module.id}`),
       type: 'interactive',
       title: `${module.title} - Practice Exercises`,
       url: `/learning/interactive/${module.id}`,
