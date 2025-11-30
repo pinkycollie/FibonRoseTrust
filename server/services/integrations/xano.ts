@@ -143,7 +143,7 @@ export class XanoIntegration {
   private static getHeaders(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.apiKey}`,
+      'Authorization': `Bearer ${XanoIntegration.apiKey}`,
       'X-Client-ID': 'FibonRoseTRUST'
     };
   }

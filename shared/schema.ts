@@ -295,21 +295,36 @@ export type FibonroseTrustLevel =
 
 /**
  * Interpreter verification profile
+ * Contains all verification data for an ASL interpreter
  */
 export interface InterpreterVerificationProfile {
+  /** Unique user identifier */
   userId: number;
+  /** ASL fluency level assessment */
   aslFluencyLevel: ASLFluencyLevel;
+  /** Areas of specialization for interpretation */
   specializations: InterpreterSpecialization[];
+  /** Interpretation modes the interpreter is qualified for */
   interpretationModes: InterpretationMode[];
+  /** List of professional certifications (e.g., RID, NIC) */
   certifications: string[];
+  /** Years of professional interpreting experience */
   yearsExperience: number;
+  /** Cultural competency score (0-100 scale, max 20 points towards trust score) */
   culturalCompetencyScore: number;
+  /** Community standing score based on peer reviews (0-100 scale, max 20 points towards trust score) */
   communityStandingScore: number;
+  /** Client satisfaction and performance rating (0-100 scale, max 15 points towards trust score) */
   performanceRating: number;
+  /** Overall Fibonrose Trust Score (0-100 scale) */
   fibonroseTrustScore: number;
+  /** Calculated trust level based on fibonroseTrustScore */
   fibonroseTrustLevel: FibonroseTrustLevel;
+  /** Organization or system that performed the verification */
   verifiedBy: string;
+  /** Date when verification was completed */
   verifiedAt: Date;
+  /** Date of most recent skills assessment */
   lastAssessmentAt: Date;
 }
 
@@ -340,28 +355,41 @@ export type DeafSkillCategory =
 
 /**
  * Deaf individual experience verification profile
+ * Contains all verification data for a deaf individual's work experience
  */
 export interface DeafExperienceProfile {
+  /** Unique user identifier */
   userId: number;
+  /** ASL fluency level for the deaf individual */
   aslFluencyLevel: ASLFluencyLevel;
+  /** Categories of experience the individual has documented */
   experienceCategories: DeafExperienceCategory[];
+  /** List of verified skills with verification status */
   skills: {
     category: DeafSkillCategory;
     name: string;
     verified: boolean;
     verifiedBy?: string;
   }[];
+  /** Number of community vouches received from peers */
   communityVouches: number;
+  /** Number of endorsements from companies/organizations */
   companyEndorsements: number;
+  /** Number of projects with documented evidence */
   projectsDocumented: number;
+  /** Quantified impact measurements from volunteer and advocacy work */
   impactMeasurements: {
     metric: string;
     value: number;
     description: string;
   }[];
+  /** Overall Fibonrose Trust Score (0-100 scale) */
   fibonroseTrustScore: number;
+  /** Calculated trust level based on fibonroseTrustScore */
   fibonroseTrustLevel: FibonroseTrustLevel;
+  /** Earned badges (e.g., ASL_FLUENT, DEAF_COMMUNITY_LEADER) */
   badges: string[];
+  /** Profile completeness percentage (0-100 scale) */
   profileCompleteness: number;
 }
 

@@ -159,15 +159,23 @@ describe('DEAF FIRST Verification Types', () => {
     });
 
     it('should handle partial scores correctly', () => {
+      const skillsProficiency = 20; // 50% of max
+      const experienceVerification = 15; // 60% of max
+      const communityStanding = 10; // 50% of max
+      const performanceRating = 8; // ~53% of max
+      const calculatedTotal = skillsProficiency + experienceVerification + communityStanding + performanceRating;
+      
       const partialBreakdown: FibonroseTrustScoreBreakdown = {
-        skillsProficiency: 20, // 50% of max
-        experienceVerification: 15, // 60% of max
-        communityStanding: 10, // 50% of max
-        performanceRating: 8, // ~53% of max
-        totalScore: 53,
-        trustLevel: calculateFibonroseTrustLevel(53)
+        skillsProficiency,
+        experienceVerification,
+        communityStanding,
+        performanceRating,
+        totalScore: calculatedTotal,
+        trustLevel: calculateFibonroseTrustLevel(calculatedTotal)
       };
       
+      expect(partialBreakdown.totalScore).toBe(53);
+      expect(partialBreakdown.trustLevel).toBe('unverified');
       expect(partialBreakdown.trustLevel).toBe('unverified');
     });
   });
