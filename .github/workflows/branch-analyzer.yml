@@ -54,7 +54,6 @@ jobs:
           
           ACTIVE_BRANCHES="[]"
           STALE_BRANCHES="[]"
-          THIRTY_DAYS_AGO=$(date -d "30 days ago" +%s 2>/dev/null || date -v-30d +%s)
           
           for branch in $(git for-each-ref --sort=-committerdate refs/remotes/origin --format='%(refname:short)' | head -20); do
             branch_name="${branch#origin/}"
@@ -109,25 +108,8 @@ jobs:
           echo "| # | Title | Branch | Status | Mergeable | Review |" >> $GITHUB_STEP_SUMMARY
           echo "|---|-------|--------|--------|-----------|--------|" >> $GITHUB_STEP_SUMMARY
           
-          MERGEABLE_PRS="[]"
-          TESTABLE_PRS="[]"
-          NEEDS_ATTENTION="[]"
-          
-          echo "$PRS" | jq -c '.[]' | while read -r pr; do
-            number=$(echo "$pr" | jq -r '.number')
-            title=$(echo "$pr" | jq -r '.title' | head -c 50)
-            branch=$(echo "$pr" | jq -r '.headRefName')
-            is_draft=$(echo "$pr" | jq -r '.isDraft')
-            mergeable=$(echo "$pr" | jq -r '.mergeable')
-            review=$(echo "$pr" | jq -r '.reviewDecision // "PENDING"')
-            
-            status="Ready"
-            if [ "$is_draft" = "true" ]; then
-              status="Draft"
-            fi
-            
-            echo "| #$number | $title | $branch | $status | $mergeable | $review |" >> $GITHUB_STEP_SUMMARY
-          done
+          # Generate PR table using jq to avoid subshell issues
+          echo "$PRS" | jq -r '.[] | "| #\(.number) | \(.title | .[0:50]) | \(.headRefName) | \(if .isDraft then "Draft" else "Ready" end) | \(.mergeable // "UNKNOWN") | \(.reviewDecision // "PENDING") |"' >> $GITHUB_STEP_SUMMARY
           
           # Count PRs by status
           total=$(echo "$PRS" | jq length)
@@ -143,9 +125,9 @@ jobs:
           echo "- **Mergeable**: $mergeable_count" >> $GITHUB_STEP_SUMMARY
           
           # Output for downstream jobs
-          MERGEABLE_PRS=$(echo "$PRS" | jq '[.[] | select(.mergeable == "MERGEABLE") | .number]')
-          TESTABLE_PRS=$(echo "$PRS" | jq '[.[] | select(.isDraft == false) | .number]')
-          NEEDS_ATTENTION=$(echo "$PRS" | jq '[.[] | select(.reviewDecision == "CHANGES_REQUESTED") | .number]')
+          MERGEABLE_PRS=$(echo "$PRS" | jq -c '[.[] | select(.mergeable == "MERGEABLE") | .number]')
+          TESTABLE_PRS=$(echo "$PRS" | jq -c '[.[] | select(.isDraft == false) | .number]')
+          NEEDS_ATTENTION=$(echo "$PRS" | jq -c '[.[] | select(.reviewDecision == "CHANGES_REQUESTED") | .number]')
           
           echo "mergeable-prs=$MERGEABLE_PRS" >> $GITHUB_OUTPUT
           echo "testable-prs=$TESTABLE_PRS" >> $GITHUB_OUTPUT

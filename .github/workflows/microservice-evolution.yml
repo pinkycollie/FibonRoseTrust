@@ -59,16 +59,25 @@ jobs:
           TESTS_CHANGED="false"
           DOCS_CHANGED="false"
           
-          echo "$CHANGED_FILES" | while read -r file; do
+          # Process changed files without subshell
+          while IFS= read -r file; do
             case "$file" in
-              client/*) echo "client=true" >> $GITHUB_OUTPUT ;;
-              server/*) echo "server=true" >> $GITHUB_OUTPUT ;;
-              shared/*) echo "shared=true" >> $GITHUB_OUTPUT ;;
-              tools/*) echo "tools=true" >> $GITHUB_OUTPUT ;;
-              test/*) echo "tests=true" >> $GITHUB_OUTPUT ;;
-              docs/*) echo "docs=true" >> $GITHUB_OUTPUT ;;
+              client/*) CLIENT_CHANGED="true" ;;
+              server/*) SERVER_CHANGED="true" ;;
+              shared/*) SHARED_CHANGED="true" ;;
+              tools/*) TOOLS_CHANGED="true" ;;
+              test/*) TESTS_CHANGED="true" ;;
+              docs/*) DOCS_CHANGED="true" ;;
             esac
-          done
+          done <<< "$CHANGED_FILES"
+          
+          # Set outputs
+          echo "client=$CLIENT_CHANGED" >> $GITHUB_OUTPUT
+          echo "server=$SERVER_CHANGED" >> $GITHUB_OUTPUT
+          echo "shared=$SHARED_CHANGED" >> $GITHUB_OUTPUT
+          echo "tools=$TOOLS_CHANGED" >> $GITHUB_OUTPUT
+          echo "tests=$TESTS_CHANGED" >> $GITHUB_OUTPUT
+          echo "docs=$DOCS_CHANGED" >> $GITHUB_OUTPUT
           
           # Check if any code changed (not just docs)
           CODE_FILES=$(echo "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx|json|yml|yaml)$' | grep -v '^docs/' || true)
@@ -77,14 +86,6 @@ jobs:
           else
             echo "any-code=false" >> $GITHUB_OUTPUT
           fi
-          
-          # Set defaults if not set
-          echo "client=${CLIENT_CHANGED:-false}" >> $GITHUB_OUTPUT
-          echo "server=${SERVER_CHANGED:-false}" >> $GITHUB_OUTPUT
-          echo "shared=${SHARED_CHANGED:-false}" >> $GITHUB_OUTPUT
-          echo "tools=${TOOLS_CHANGED:-false}" >> $GITHUB_OUTPUT
-          echo "tests=${TESTS_CHANGED:-false}" >> $GITHUB_OUTPUT
-          echo "docs=${DOCS_CHANGED:-false}" >> $GITHUB_OUTPUT
 
   qa-pipeline:
     name: Quality Assurance

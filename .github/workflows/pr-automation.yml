@@ -1,8 +1,8 @@
 name: PR Automation & Analysis
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, ready_for_review, labeled]
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
   pull_request_review:
     types: [submitted]
   issue_comment:
@@ -18,15 +18,11 @@ jobs:
   pr-triage:
     name: PR Triage & Labeling
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request_target' && github.event.action == 'opened'
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    permissions:
+      pull-requests: write
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
       - name: Analyze PR and add labels
         uses: actions/github-script@v7
         with:
@@ -95,14 +91,14 @@ jobs:
   testability-check:
     name: Testability Assessment
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request_target' && (github.event.action == 'opened' || github.event.action == 'synchronize')
+    if: github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize')
+    permissions:
+      contents: read
+      statuses: write
     
     steps:
       - name: Checkout PR code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -129,7 +125,7 @@ jobs:
               repo: context.repo.repo,
               sha: context.payload.pull_request.head.sha,
               state: testsPassed ? 'success' : 'failure',
-              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              target_url: 'https://github.com/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId,
               description: testsPassed ? 'All tests passed' : 'Some tests failed',
               context: 'Testability Check'
             });
@@ -138,6 +134,8 @@ jobs:
     name: Review Automation
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request_review' && github.event.review.state == 'approved'
+    permissions:
+      pull-requests: write
     
     steps:
       - name: Check all reviews approved
@@ -189,6 +187,9 @@ jobs:
     name: Handle Merge Command
     runs-on: ubuntu-latest
     if: github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '/merge')
+    permissions:
+      contents: write
+      pull-requests: write
     
     steps:
       - name: Process merge command
@@ -228,7 +229,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
-                body: `❌ Cannot merge: PR is not in a clean state. Current state: \`${pr.data.mergeable_state}\``
+                body: '❌ Cannot merge: PR is not in a clean state. Current state: ' + pr.data.mergeable_state
               });
               return;
             }
@@ -253,6 +254,6 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
-                body: `❌ Failed to merge: ${error.message}`
+                body: '❌ Failed to merge: ' + error.message
               });
             }
