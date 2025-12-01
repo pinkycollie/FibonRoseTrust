@@ -1,0 +1,204 @@
+name: Branch Activity Analyzer
+
+on:
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      analyze-prs:
+        description: 'Analyze open pull requests'
+        required: false
+        type: boolean
+        default: true
+      analyze-branches:
+        description: 'Analyze branch activity'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  analyze-branches:
+    name: Analyze Branch Activity
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.analyze-branches != 'false' }}
+    outputs:
+      active-branches: ${{ steps.analyze.outputs.active-branches }}
+      stale-branches: ${{ steps.analyze.outputs.stale-branches }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Analyze branch activity
+        id: analyze
+        run: |
+          echo "## Branch Activity Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Get all branches with their last commit dates
+          echo "### Most Active Branches (by recent commits)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | Last Commit | Days Ago | Commits (30d) |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------------|----------|---------------|" >> $GITHUB_STEP_SUMMARY
+          
+          ACTIVE_BRANCHES="[]"
+          STALE_BRANCHES="[]"
+          THIRTY_DAYS_AGO=$(date -d "30 days ago" +%s 2>/dev/null || date -v-30d +%s)
+          
+          for branch in $(git for-each-ref --sort=-committerdate refs/remotes/origin --format='%(refname:short)' | head -20); do
+            branch_name="${branch#origin/}"
+            if [ "$branch_name" != "HEAD" ]; then
+              last_commit=$(git log -1 --format='%ci' "$branch" 2>/dev/null | cut -d' ' -f1)
+              last_commit_ts=$(git log -1 --format='%ct' "$branch" 2>/dev/null)
+              days_ago=$(( ($(date +%s) - last_commit_ts) / 86400 ))
+              commits_30d=$(git rev-list --count --since="30 days ago" "$branch" 2>/dev/null || echo "0")
+              
+              echo "| $branch_name | $last_commit | $days_ago | $commits_30d |" >> $GITHUB_STEP_SUMMARY
+              
+              if [ "$days_ago" -lt 14 ]; then
+                ACTIVE_BRANCHES=$(echo "$ACTIVE_BRANCHES" | jq ". + [\"$branch_name\"]")
+              elif [ "$days_ago" -gt 60 ]; then
+                STALE_BRANCHES=$(echo "$STALE_BRANCHES" | jq ". + [\"$branch_name\"]")
+              fi
+            fi
+          done
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Active branches** (< 14 days): $(echo "$ACTIVE_BRANCHES" | jq length)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Stale branches** (> 60 days): $(echo "$STALE_BRANCHES" | jq length)" >> $GITHUB_STEP_SUMMARY
+          
+          echo "active-branches=$ACTIVE_BRANCHES" >> $GITHUB_OUTPUT
+          echo "stale-branches=$STALE_BRANCHES" >> $GITHUB_OUTPUT
+
+  analyze-prs:
+    name: Analyze Pull Requests
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.analyze-prs != 'false' }}
+    outputs:
+      mergeable-prs: ${{ steps.pr-analysis.outputs.mergeable-prs }}
+      testable-prs: ${{ steps.pr-analysis.outputs.testable-prs }}
+      needs-attention: ${{ steps.pr-analysis.outputs.needs-attention }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Analyze pull requests
+        id: pr-analysis
+        run: |
+          echo "## Pull Request Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Get open pull requests
+          PRS=$(gh pr list --json number,title,headRefName,baseRefName,isDraft,mergeable,reviewDecision,updatedAt --state open)
+          
+          echo "### Open Pull Requests" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| # | Title | Branch | Status | Mergeable | Review |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|-------|--------|--------|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          MERGEABLE_PRS="[]"
+          TESTABLE_PRS="[]"
+          NEEDS_ATTENTION="[]"
+          
+          echo "$PRS" | jq -c '.[]' | while read -r pr; do
+            number=$(echo "$pr" | jq -r '.number')
+            title=$(echo "$pr" | jq -r '.title' | head -c 50)
+            branch=$(echo "$pr" | jq -r '.headRefName')
+            is_draft=$(echo "$pr" | jq -r '.isDraft')
+            mergeable=$(echo "$pr" | jq -r '.mergeable')
+            review=$(echo "$pr" | jq -r '.reviewDecision // "PENDING"')
+            
+            status="Ready"
+            if [ "$is_draft" = "true" ]; then
+              status="Draft"
+            fi
+            
+            echo "| #$number | $title | $branch | $status | $mergeable | $review |" >> $GITHUB_STEP_SUMMARY
+          done
+          
+          # Count PRs by status
+          total=$(echo "$PRS" | jq length)
+          drafts=$(echo "$PRS" | jq '[.[] | select(.isDraft == true)] | length')
+          ready=$(echo "$PRS" | jq '[.[] | select(.isDraft == false)] | length')
+          mergeable_count=$(echo "$PRS" | jq '[.[] | select(.mergeable == "MERGEABLE")] | length')
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### PR Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total open PRs**: $total" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ready for review**: $ready" >> $GITHUB_STEP_SUMMARY
+          echo "- **Drafts**: $drafts" >> $GITHUB_STEP_SUMMARY
+          echo "- **Mergeable**: $mergeable_count" >> $GITHUB_STEP_SUMMARY
+          
+          # Output for downstream jobs
+          MERGEABLE_PRS=$(echo "$PRS" | jq '[.[] | select(.mergeable == "MERGEABLE") | .number]')
+          TESTABLE_PRS=$(echo "$PRS" | jq '[.[] | select(.isDraft == false) | .number]')
+          NEEDS_ATTENTION=$(echo "$PRS" | jq '[.[] | select(.reviewDecision == "CHANGES_REQUESTED") | .number]')
+          
+          echo "mergeable-prs=$MERGEABLE_PRS" >> $GITHUB_OUTPUT
+          echo "testable-prs=$TESTABLE_PRS" >> $GITHUB_OUTPUT
+          echo "needs-attention=$NEEDS_ATTENTION" >> $GITHUB_OUTPUT
+
+  generate-report:
+    name: Generate Activity Report
+    runs-on: ubuntu-latest
+    needs: [analyze-branches, analyze-prs]
+    if: always()
+
+    steps:
+      - name: Create activity report
+        run: |
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          
+          echo "## Repository Activity Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Generated**: $TIMESTAMP" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Branch Health" >> $GITHUB_STEP_SUMMARY
+          echo "- Active branches: ${{ needs.analyze-branches.outputs.active-branches || '[]' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Stale branches: ${{ needs.analyze-branches.outputs.stale-branches || '[]' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### PR Health" >> $GITHUB_STEP_SUMMARY
+          echo "- Mergeable PRs: ${{ needs.analyze-prs.outputs.mergeable-prs || '[]' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Testable PRs: ${{ needs.analyze-prs.outputs.testable-prs || '[]' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Needs attention: ${{ needs.analyze-prs.outputs.needs-attention || '[]' }}" >> $GITHUB_STEP_SUMMARY
+          
+          # Create JSON report
+          mkdir -p reports
+          cat > reports/activity-report.json << EOF
+          {
+            "timestamp": "$TIMESTAMP",
+            "branches": {
+              "active": ${{ needs.analyze-branches.outputs.active-branches || '[]' }},
+              "stale": ${{ needs.analyze-branches.outputs.stale-branches || '[]' }}
+            },
+            "pullRequests": {
+              "mergeable": ${{ needs.analyze-prs.outputs.mergeable-prs || '[]' }},
+              "testable": ${{ needs.analyze-prs.outputs.testable-prs || '[]' }},
+              "needsAttention": ${{ needs.analyze-prs.outputs.needs-attention || '[]' }}
+            }
+          }
+          EOF
+          
+          cat reports/activity-report.json
+
+      - name: Upload activity report
+        uses: actions/upload-artifact@v4
+        with:
+          name: activity-report-${{ github.run_number }}
+          path: reports/
+          retention-days: 30

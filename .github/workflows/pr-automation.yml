@@ -1,0 +1,258 @@
+name: PR Automation & Analysis
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, ready_for_review, labeled]
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+  checks: write
+
+jobs:
+  pr-triage:
+    name: PR Triage & Labeling
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target' && github.event.action == 'opened'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Analyze PR and add labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const labels = [];
+            
+            // Analyze branch name for type
+            const branchName = pr.head.ref;
+            if (branchName.startsWith('feature/')) labels.push('feature');
+            if (branchName.startsWith('hotfix/')) labels.push('hotfix');
+            if (branchName.startsWith('release/')) labels.push('release');
+            if (branchName.startsWith('copilot/')) labels.push('copilot');
+            if (branchName.startsWith('fix/')) labels.push('bug');
+            if (branchName.startsWith('docs/')) labels.push('documentation');
+            
+            // Analyze PR size
+            const additions = pr.additions || 0;
+            const deletions = pr.deletions || 0;
+            const totalChanges = additions + deletions;
+            
+            if (totalChanges <= 10) labels.push('size/XS');
+            else if (totalChanges <= 50) labels.push('size/S');
+            else if (totalChanges <= 200) labels.push('size/M');
+            else if (totalChanges <= 500) labels.push('size/L');
+            else labels.push('size/XL');
+            
+            // Check for draft
+            if (pr.draft) labels.push('WIP');
+            
+            // Add labels if any were determined
+            if (labels.length > 0) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: labels
+                });
+                console.log('Added labels: ' + labels.join(', '));
+              } catch (error) {
+                console.log('Could not add labels: ' + error.message);
+              }
+            }
+            
+            // Add welcome comment
+            const body = '## 👋 Thanks for your contribution!\n\n' +
+              '### PR Summary\n' +
+              '- **Branch**: `' + branchName + '`\n' +
+              '- **Size**: ' + totalChanges + ' lines changed (+' + additions + '/-' + deletions + ')\n' +
+              '- **Status**: ' + (pr.draft ? 'Draft' : 'Ready for review') + '\n\n' +
+              '### Next Steps\n' +
+              '1. ✅ Automated tests will run on this PR\n' +
+              '2. 🔍 Code review will be requested\n' +
+              '3. 📋 Mergeability will be assessed automatically\n\n' +
+              '---\n' +
+              '*This is an automated message from the FibonRoseTrust CI system.*';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: body
+            });
+
+  testability-check:
+    name: Testability Assessment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target' && (github.event.action == 'opened' || github.event.action == 'synchronize')
+    
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        id: tests
+        run: npm run test:run
+        continue-on-error: true
+
+      - name: Set test status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const testsPassed = '${{ steps.tests.outcome }}' === 'success';
+            
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request.head.sha,
+              state: testsPassed ? 'success' : 'failure',
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: testsPassed ? 'All tests passed' : 'Some tests failed',
+              context: 'Testability Check'
+            });
+
+  review-automation:
+    name: Review Automation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_review' && github.event.review.state == 'approved'
+    
+    steps:
+      - name: Check all reviews approved
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // Get all reviews
+            const reviews = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            // Check if there are any approved reviews and no changes requested
+            const approvals = reviews.data.filter(r => r.state === 'APPROVED');
+            const changesRequested = reviews.data.filter(r => r.state === 'CHANGES_REQUESTED');
+            
+            if (approvals.length > 0 && changesRequested.length === 0) {
+              // Add approved label
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['approved']
+                });
+              } catch (error) {
+                console.log(`Could not add approved label: ${error.message}`);
+              }
+              
+              // Remove WIP label if present
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name: 'WIP'
+                });
+              } catch (error) {
+                // Label might not exist
+              }
+              
+              console.log('PR approved and labeled');
+            }
+
+  merge-command:
+    name: Handle Merge Command
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '/merge')
+    
+    steps:
+      - name: Process merge command
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = context.payload.comment;
+            const issue = context.payload.issue;
+            
+            // Check if commenter has write access
+            const permission = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: comment.user.login
+            });
+            
+            if (!['admin', 'write'].includes(permission.data.permission)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: '❌ You do not have permission to use the `/merge` command.'
+              });
+              return;
+            }
+            
+            // Get PR details
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: issue.number
+            });
+            
+            // Check if mergeable
+            if (pr.data.mergeable_state !== 'clean') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `❌ Cannot merge: PR is not in a clean state. Current state: \`${pr.data.mergeable_state}\``
+              });
+              return;
+            }
+            
+            // Attempt merge
+            try {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: issue.number,
+                merge_method: 'squash'
+              });
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: '✅ PR successfully merged!'
+              });
+            } catch (error) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `❌ Failed to merge: ${error.message}`
+              });
+            }
