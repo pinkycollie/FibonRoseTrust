@@ -76,33 +76,37 @@ def example_2_validation_decorators():
     
     @validate_address
     def process_address(address: str):
-        print(f"✓ Valid address: {address}")
+        print(f"  ✓ Valid address: {address}")
         return address
     
     @validate_amount(min_amount=0.001, max_amount=10.0)
     def process_amount(amount: float):
-        print(f"✓ Valid amount: {amount} ETH")
+        print(f"  ✓ Valid amount: {amount} ETH")
         return amount
     
     # Test valid inputs
     print("Testing valid inputs:")
     try:
-        process_address("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
-        process_amount(1.5)
+        process_address(address="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
+        process_amount(amount=1.5)
     except ValidationError as e:
-        print(f"✗ {e}")
+        print(f"  ✗ {e}")
     
     # Test invalid inputs
     print("\nTesting invalid inputs:")
     try:
-        process_address("invalid_address")
+        print("  Attempting invalid address...")
+        process_address(address="invalid_address")
+        print("  ✗ Validation did not catch invalid address!")
     except ValidationError as e:
-        print(f"✓ Caught validation error: {e}")
+        print(f"  ✓ Caught validation error: {e}")
     
     try:
-        process_amount(15.0)  # Exceeds max_amount
+        print("  Attempting amount exceeding max...")
+        process_amount(amount=15.0)  # Exceeds max_amount
+        print("  ✗ Validation did not catch excessive amount!")
     except ValidationError as e:
-        print(f"✓ Caught validation error: {e}")
+        print(f"  ✓ Caught validation error: {e}")
 
 
 def example_3_metrics_collection():
