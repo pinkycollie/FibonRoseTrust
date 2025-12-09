@@ -8,6 +8,7 @@ and log changes, highlighting modularity and reusability.
 
 import asyncio
 import logging
+import time
 from typing import Optional, Callable, Dict, Any, List
 from web3 import Web3
 from web3.contract import Contract
@@ -267,7 +268,7 @@ class EventLogger:
         if not self.contract:
             raise ValueError("Contract instance required for listening to events")
         
-        task_id = f"listen_{event_name}_{int(asyncio.get_event_loop().time())}"
+        task_id = f"listen_{event_name}_{int(time.time())}"
         self.metrics_collector.start_task(
             task_id,
             f"Listen to {event_name} Events",
@@ -280,12 +281,12 @@ class EventLogger:
             
             logger.info(f"Started listening to {event_name} events from block {from_block}")
             
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.time()
             event_count = 0
             
             while True:
                 # Check if duration exceeded
-                if duration and (asyncio.get_event_loop().time() - start_time) > duration:
+                if duration and (time.time() - start_time) > duration:
                     logger.info(f"Listening duration exceeded, stopping")
                     break
                 
@@ -345,7 +346,7 @@ class EventLogger:
         if not self.contract:
             raise ValueError("Contract instance required for getting past events")
         
-        task_id = f"get_past_{event_name}_{int(asyncio.get_event_loop().time() * 1000) if asyncio.get_event_loop else 0}"
+        task_id = f"get_past_{event_name}_{int(time.time() * 1000)}"
         self.metrics_collector.start_task(
             task_id,
             f"Get Past {event_name} Events",

@@ -8,7 +8,8 @@ logging functionality, and metrics collection for task complexity measurement.
 
 import asyncio
 import logging
-from typing import Optional, Dict, Any
+import time
+from typing import Optional, Dict, Any, List
 from web3 import Web3, AsyncWeb3
 from web3.exceptions import Web3Exception
 from eth_account import Account
@@ -132,7 +133,7 @@ class BalanceTransfer:
             ... )
             >>> print(f"Transaction hash: {result['transaction_hash']}")
         """
-        task_id = f"transfer_{int(asyncio.get_event_loop().time() * 1000)}"
+        task_id = f"transfer_{int(time.time() * 1000)}"
         metrics = self.metrics_collector.start_task(
             task_id,
             "Balance Transfer",
@@ -273,7 +274,7 @@ class BalanceTransfer:
             ... )
         """
         # Run synchronous transfer in executor to avoid blocking
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None,
             self.transfer,
@@ -299,15 +300,15 @@ class BalanceTransfer:
         Example:
             >>> balance = await transfer.get_balance_async("0x742d35Cc...")
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.get_balance, address)
     
     async def batch_transfer_async(
         self,
         from_address: str,
-        recipients: list[Dict[str, Any]],
+        recipients: List[Dict[str, Any]],
         private_key: str
-    ) -> list[Dict[str, Any]]:
+    ) -> List[Dict[str, Any]]:
         """
         Perform multiple transfers asynchronously for efficiency.
         
