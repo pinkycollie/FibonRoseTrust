@@ -10,12 +10,13 @@ Note: These are unit tests that don't require actual blockchain connectivity.
 """
 
 import sys
+import os
 import unittest
 from unittest.mock import Mock, patch, MagicMock
 import time
 
 # Add current directory to path for imports
-sys.path.insert(0, '/home/runner/work/FibonRoseTrust/FibonRoseTrust')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from blockchain_examples import (
     validate_address,
