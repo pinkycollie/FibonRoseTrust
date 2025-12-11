@@ -109,22 +109,33 @@ export class XanoIntegration {
   
   /**
    * Static method to test connection (for backward compatibility)
-   * @returns Whether connection is successful
+   * @deprecated Use instance method instead: new XanoIntegration(apiKey, url).testConnection()
+   * @returns Whether connection is successful (always returns true as placeholder)
+   * 
+   * Note: This static method is a placeholder for backward compatibility.
+   * It does not perform actual connection testing. To properly test a Xano connection,
+   * create an instance with credentials and call the instance method.
    */
   public static async testConnection(): Promise<boolean> {
-    log('Static testConnection called - this is a placeholder', 'xano');
+    log('WARNING: Static testConnection called - this is a placeholder method. Use instance method for actual testing.', 'xano');
     return true;
   }
   
   /**
    * Static method to get API metadata (for backward compatibility)
-   * @returns API metadata
+   * @deprecated Use instance-based approach: new XanoIntegration(apiKey, url)
+   * @returns API metadata (placeholder data)
+   * 
+   * Note: This static method returns hardcoded placeholder data for backward compatibility.
+   * To retrieve actual Xano API metadata, create an instance with proper credentials
+   * and implement a custom metadata retrieval method.
    */
   public static async getApiMetadata(): Promise<any> {
-    log('Static getApiMetadata called - this is a placeholder', 'xano');
+    log('WARNING: Static getApiMetadata called - returning placeholder data. Migrate to instance-based approach.', 'xano');
     return {
       version: '1.0',
-      endpoints: []
+      endpoints: [],
+      note: 'This is placeholder data. Use instance-based XanoIntegration for actual API calls.'
     };
   }
   
