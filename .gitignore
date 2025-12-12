@@ -54,8 +54,3 @@ __pycache__/
 .Python
 venv/
 ENV/
-
-# Lock files (kept for reference but can be regenerated)
-# Uncomment if needed:
-# package-lock.json
-# uv.lock

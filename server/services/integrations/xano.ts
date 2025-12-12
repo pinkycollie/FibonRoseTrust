@@ -21,7 +21,10 @@ export class XanoIntegration {
   async testConnection(): Promise<{
     success: boolean;
     error?: string;
-    details?: any;
+    details?: {
+      message: string;
+      [key: string]: any;
+    };
     apiVersion?: string;
   }> {
     try {
@@ -37,7 +40,9 @@ export class XanoIntegration {
       return {
         success: false,
         error: error.message || 'Unknown error',
-        details: error
+        details: {
+          message: error.message || 'Unknown error occurred'
+        }
       };
     }
   }
@@ -45,7 +50,10 @@ export class XanoIntegration {
   /**
    * Get API metadata (stub)
    */
-  async getApiMetadata(): Promise<any> {
+  async getApiMetadata(): Promise<{
+    message: string;
+    status: string;
+  }> {
     return {
       message: 'Xano integration is currently disabled',
       status: 'deprecated'
@@ -56,22 +64,29 @@ export class XanoIntegration {
    * Static method to set API key (stub for backward compatibility)
    */
   static setApiKey(apiKey: string): void {
-    // Stub implementation
-    console.warn('XanoIntegration.setApiKey called but Xano integration is disabled');
+    // Stub implementation - only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('XanoIntegration.setApiKey called but Xano integration is disabled');
+    }
   }
 
   /**
    * Static method to test connection (stub for backward compatibility)
    */
   static async testConnection(): Promise<boolean> {
-    console.warn('XanoIntegration.testConnection called but Xano integration is disabled');
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('XanoIntegration.testConnection called but Xano integration is disabled');
+    }
     return false;
   }
 
   /**
    * Static method to get API metadata (stub for backward compatibility)
    */
-  static async getApiMetadata(): Promise<any> {
+  static async getApiMetadata(): Promise<{
+    message: string;
+    status: string;
+  }> {
     return {
       message: 'Xano integration is currently disabled',
       status: 'deprecated'
@@ -81,7 +96,14 @@ export class XanoIntegration {
   /**
    * Register a webhook (stub)
    */
-  async registerWebhook(config: any): Promise<any> {
+  async registerWebhook(config: {
+    url: string;
+    events: string[];
+    secret?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+  }> {
     return {
       success: false,
       message: 'Xano integration is currently disabled'
@@ -91,7 +113,13 @@ export class XanoIntegration {
   /**
    * Static method to process webhook (stub)
    */
-  static async processWebhook(payload: any): Promise<any> {
+  static async processWebhook(payload: {
+    event: string;
+    data: Record<string, any>;
+  }): Promise<{
+    success: boolean;
+    message: string;
+  }> {
     return {
       success: false,
       message: 'Xano integration is currently disabled'
