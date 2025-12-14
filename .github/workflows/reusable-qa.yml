@@ -1,0 +1,126 @@
+name: Reusable QA Workflow
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: 'Node.js version to use'
+        required: false
+        type: string
+        default: '20.x'
+      run-tests:
+        description: 'Whether to run tests'
+        required: false
+        type: boolean
+        default: true
+      run-lint:
+        description: 'Whether to run linting'
+        required: false
+        type: boolean
+        default: true
+      run-build:
+        description: 'Whether to run build'
+        required: false
+        type: boolean
+        default: true
+      upload-coverage:
+        description: 'Whether to upload coverage reports'
+        required: false
+        type: boolean
+        default: false
+      environment:
+        description: 'Target environment (development, staging, production)'
+        required: false
+        type: string
+        default: 'development'
+    outputs:
+      test-passed:
+        description: 'Whether all tests passed'
+        value: ${{ jobs.qa.outputs.test-passed }}
+      build-passed:
+        description: 'Whether build succeeded'
+        value: ${{ jobs.qa.outputs.build-passed }}
+      is-mergeable:
+        description: 'Whether the branch is ready to merge'
+        value: ${{ jobs.qa.outputs.is-mergeable }}
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: read
+
+jobs:
+  qa:
+    name: Quality Assurance
+    runs-on: ubuntu-latest
+    outputs:
+      test-passed: ${{ steps.tests.outcome == 'success' }}
+      build-passed: ${{ steps.build.outcome == 'success' }}
+      is-mergeable: ${{ steps.tests.outcome == 'success' && steps.build.outcome == 'success' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run type check (lint)
+        id: lint
+        if: inputs.run-lint
+        run: npm run check
+        continue-on-error: true
+
+      - name: Run tests
+        id: tests
+        if: inputs.run-tests
+        run: npm run test:run
+
+      - name: Run tests with coverage
+        if: inputs.run-tests && inputs.upload-coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage reports
+        if: inputs.run-tests && inputs.upload-coverage && secrets.CODECOV_TOKEN
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Build application
+        id: build
+        if: inputs.run-build
+        run: npm run build
+
+      - name: Upload build artifacts
+        if: inputs.run-build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+
+      - name: QA Summary
+        if: always()
+        run: |
+          echo "## QA Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ steps.lint.outcome || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ steps.tests.outcome || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ steps.build.outcome || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Node Version**: ${{ inputs.node-version }}" >> $GITHUB_STEP_SUMMARY
