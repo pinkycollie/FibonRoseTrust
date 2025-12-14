@@ -5,6 +5,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import professionalRoutes from './professional.controller';
 
 // Create the main router for API v1
 const apiV1Router = Router();
@@ -21,14 +22,18 @@ apiV1Router.get('/', (req: Request, res: Response) => {
       '/nfts',
       '/webhooks',
       '/security',
-      '/integrations'
+      '/integrations',
+      '/professionals'
     ],
     status: 'Under active development',
     documentation: '/api/docs'
   });
 });
 
-// Once individual controllers are ready, uncomment and integrate them:
+// Register professional profiles controller
+apiV1Router.use('/professionals', professionalRoutes);
+
+// Once other individual controllers are ready, uncomment and integrate them:
 /*
 import userRoutes from './user.controller';
 import verificationRoutes from './verification.controller';

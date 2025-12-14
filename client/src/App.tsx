@@ -12,6 +12,8 @@ import Settings from "@/pages/Settings";
 import Webhooks from "@/pages/Webhooks";
 import Web3Dashboard from "@/pages/Web3Dashboard";
 import DeafProfilePage from "@/pages/DeafProfilePage";
+import ProfessionalDirectoryPage from "@/pages/ProfessionalDirectoryPage";
+import VerificationProcessPage from "@/pages/VerificationProcessPage";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useSidebar } from "./hooks/use-sidebar";
@@ -35,6 +37,8 @@ function Router() {
               <Route path="/verification-history" component={VerificationHistoryPage} />
               <Route path="/web3" component={Web3Dashboard} />
               <Route path="/deaf-profile" component={DeafProfilePage} />
+              <Route path="/professional-directory" component={ProfessionalDirectoryPage} />
+              <Route path="/verification-process" component={VerificationProcessPage} />
               <Route path="/api-integrations" component={ApiIntegrations} />
               <Route path="/webhooks" component={Webhooks} />
               <Route path="/settings" component={Settings} />
