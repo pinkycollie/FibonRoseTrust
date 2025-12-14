@@ -95,8 +95,17 @@ The test suite covers:
 - Storage operations (users, verifications, trust scores)
 - Data permission management
 - Utility functions
+- DEAF FIRST verification types and trust level calculations
 
 For detailed testing documentation, see [docs/TESTING.md](docs/TESTING.md).
+
+## Documentation
+
+- [FibonroseTrust Bridge Integration Guide](docs/FIBONROSE_BRIDGE_INTEGRATION_GUIDE.md) - Complete guide for DEAF FIRST verification standards, interpreter verification, and deaf experience verification
+- [DeafFirst Integration Summary](docs/DEAFFIRST_INTEGRATION_SUMMARY.md) - PinkSync and DeafFirst MCP module integration
+- [NFT ID Journey](docs/NFT_ID_JOURNEY.md) - Technical overview of the NFT identity verification flow
+- [REST API Overview](docs/REST_API_OVERVIEW.md) - API documentation and endpoints
+- [Universal Webhook Hub](docs/UNIVERSAL_WEBHOOK_HUB.md) - Webhook system documentation
 
 ### CI/CD Pipeline
 

@@ -1,1 +1,7 @@
-deleted files of xano as i am choosing different approaches
+/**
+ * Xano Service Module
+ * Re-exports XanoIntegration for backward compatibility
+ * This file exists for module resolution purposes
+ */
+
+export { XanoIntegration, XanoIntegration as default } from './integrations/xano';

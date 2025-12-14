@@ -238,7 +238,231 @@ export const EventTypes = {
   
   // PinkSync events
   PINKSYNC_WEBHOOK_RECEIVED: 'pinksync.webhook_received',
-  PINKSYNC_TRIGGER_ACTIVATED: 'pinksync.trigger_activated'
+  PINKSYNC_TRIGGER_ACTIVATED: 'pinksync.trigger_activated',
+  
+  // Interpreter verification events
+  INTERPRETER_VERIFICATION_STARTED: 'interpreter.verification_started',
+  INTERPRETER_VERIFICATION_COMPLETED: 'interpreter.verification_completed',
+  INTERPRETER_SKILLS_ASSESSED: 'interpreter.skills_assessed',
+  INTERPRETER_SESSION_REQUESTED: 'interpreter.session_requested',
+  INTERPRETER_SESSION_COMPLETED: 'interpreter.session_completed',
+  
+  // Deaf experience verification events
+  DEAF_EXPERIENCE_SUBMITTED: 'deaf.experience_submitted',
+  DEAF_EXPERIENCE_VERIFIED: 'deaf.experience_verified',
+  DEAF_COMMUNITY_VOUCH_RECEIVED: 'deaf.community_vouch_received',
+  DEAF_EMERGENCY_REGISTERED: 'deaf.emergency_registered'
 } as const;
 
 export type EventType = typeof EventTypes[keyof typeof EventTypes];
+
+// =============================================================================
+// DEAF FIRST Verification Types
+// =============================================================================
+
+/**
+ * ASL fluency levels for interpreter and deaf individual assessment
+ */
+export type ASLFluencyLevel = 'beginner' | 'intermediate' | 'advanced' | 'native';
+
+/**
+ * Interpreter specialization categories for DEAF FIRST services
+ */
+export type InterpreterSpecialization = 
+  | 'financial' 
+  | 'legal' 
+  | 'real_estate' 
+  | 'insurance' 
+  | 'tax' 
+  | 'medical' 
+  | 'educational' 
+  | 'general';
+
+/**
+ * Interpreter interpretation modes
+ */
+export type InterpretationMode = 'consecutive' | 'simultaneous' | 'sight_translation' | 'video_remote';
+
+/**
+ * Fibonrose Trust Level for interpreters and deaf professionals
+ */
+export type FibonroseTrustLevel = 
+  | 'unverified'    // Below 60
+  | 'bronze'        // 60-69
+  | 'silver'        // 70-79
+  | 'gold'          // 80-89
+  | 'platinum';     // 90-100
+
+/**
+ * Interpreter verification profile
+ * Contains all verification data for an ASL interpreter
+ */
+export interface InterpreterVerificationProfile {
+  /** Unique user identifier */
+  userId: number;
+  /** ASL fluency level assessment */
+  aslFluencyLevel: ASLFluencyLevel;
+  /** Areas of specialization for interpretation */
+  specializations: InterpreterSpecialization[];
+  /** Interpretation modes the interpreter is qualified for */
+  interpretationModes: InterpretationMode[];
+  /** List of professional certifications (e.g., RID, NIC) */
+  certifications: string[];
+  /** Years of professional interpreting experience */
+  yearsExperience: number;
+  /** Cultural competency score (0-100 scale, max 20 points towards trust score) */
+  culturalCompetencyScore: number;
+  /** Community standing score based on peer reviews (0-100 scale, max 20 points towards trust score) */
+  communityStandingScore: number;
+  /** Client satisfaction and performance rating (0-100 scale, max 15 points towards trust score) */
+  performanceRating: number;
+  /** Overall Fibonrose Trust Score (0-100 scale) */
+  fibonroseTrustScore: number;
+  /** Calculated trust level based on fibonroseTrustScore */
+  fibonroseTrustLevel: FibonroseTrustLevel;
+  /** Organization or system that performed the verification */
+  verifiedBy: string;
+  /** Date when verification was completed */
+  verifiedAt: Date;
+  /** Date of most recent skills assessment */
+  lastAssessmentAt: Date;
+}
+
+/**
+ * Deaf individual experience category
+ */
+export type DeafExperienceCategory = 
+  | 'deaf_organization_leadership'
+  | 'community_advocacy'
+  | 'educational_roles'
+  | 'event_management'
+  | 'support_services'
+  | 'deaf_centric_employment'
+  | 'freelance_consulting'
+  | 'entrepreneurship'
+  | 'technology_roles'
+  | 'arts_and_media';
+
+/**
+ * Deaf skills category
+ */
+export type DeafSkillCategory = 
+  | 'leadership'
+  | 'communication'
+  | 'technical'
+  | 'advocacy'
+  | 'cultural_competency';
+
+/**
+ * Deaf individual experience verification profile
+ * Contains all verification data for a deaf individual's work experience
+ */
+export interface DeafExperienceProfile {
+  /** Unique user identifier */
+  userId: number;
+  /** ASL fluency level for the deaf individual */
+  aslFluencyLevel: ASLFluencyLevel;
+  /** Categories of experience the individual has documented */
+  experienceCategories: DeafExperienceCategory[];
+  /** List of verified skills with verification status */
+  skills: {
+    category: DeafSkillCategory;
+    name: string;
+    verified: boolean;
+    verifiedBy?: string;
+  }[];
+  /** Number of community vouches received from peers */
+  communityVouches: number;
+  /** Number of endorsements from companies/organizations */
+  companyEndorsements: number;
+  /** Number of projects with documented evidence */
+  projectsDocumented: number;
+  /** Quantified impact measurements from volunteer and advocacy work */
+  impactMeasurements: {
+    metric: string;
+    value: number;
+    description: string;
+  }[];
+  /** Overall Fibonrose Trust Score (0-100 scale) */
+  fibonroseTrustScore: number;
+  /** Calculated trust level based on fibonroseTrustScore */
+  fibonroseTrustLevel: FibonroseTrustLevel;
+  /** Earned badges (e.g., ASL_FLUENT, DEAF_COMMUNITY_LEADER) */
+  badges: string[];
+  /** Profile completeness percentage (0-100 scale) */
+  profileCompleteness: number;
+}
+
+/**
+ * Community vouch record for peer validation
+ */
+export interface CommunityVouch {
+  id: number;
+  voucherId: number;
+  voucheeId: number;
+  category: string;
+  message: string;
+  verified: boolean;
+  timestamp: Date;
+}
+
+/**
+ * Fibonrose Trust Score calculation breakdown
+ */
+export interface FibonroseTrustScoreBreakdown {
+  skillsProficiency: number;      // Max 40 points
+  experienceVerification: number; // Max 25 points
+  communityStanding: number;      // Max 20 points
+  performanceRating: number;      // Max 15 points
+  totalScore: number;             // Max 100 points
+  trustLevel: FibonroseTrustLevel;
+}
+
+/**
+ * Calculate Fibonrose Trust Level from score
+ */
+export function calculateFibonroseTrustLevel(score: number): FibonroseTrustLevel {
+  if (score >= 90) return 'platinum';
+  if (score >= 80) return 'gold';
+  if (score >= 70) return 'silver';
+  if (score >= 60) return 'bronze';
+  return 'unverified';
+}
+
+/**
+ * Get trust level display information
+ */
+export function getTrustLevelDisplay(level: FibonroseTrustLevel): {
+  emoji: string;
+  label: string;
+  description: string;
+} {
+  const displays: Record<FibonroseTrustLevel, { emoji: string; label: string; description: string }> = {
+    platinum: {
+      emoji: '🟢',
+      label: 'Platinum Trust',
+      description: 'Highest verification level, priority placement'
+    },
+    gold: {
+      emoji: '🔵',
+      label: 'Gold Trust',
+      description: 'High verification, recommended for complex services'
+    },
+    silver: {
+      emoji: '🟡',
+      label: 'Silver Trust',
+      description: 'Standard verification, suitable for routine services'
+    },
+    bronze: {
+      emoji: '🟠',
+      label: 'Bronze Trust',
+      description: 'Basic verification, supervised services recommended'
+    },
+    unverified: {
+      emoji: '🔴',
+      label: 'Unverified',
+      description: 'Not recommended for DEAF FIRST services'
+    }
+  };
+  return displays[level];
+}
