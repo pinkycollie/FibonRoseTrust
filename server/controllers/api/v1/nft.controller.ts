@@ -58,7 +58,7 @@ class NftController extends BaseController {
         metadata: {
           name: "FibonroseTrust ID",
           description: "Digital Identity NFT",
-          image: "https://api.fibonrosetrust.com/nft/image/1",
+          image: "https://trust.mbtq.dev/api/nft/image/1",
           attributes: [
             { trait_type: "Trust Level", value: 5 },
             { trait_type: "Verification Status", value: "VERIFIED" },
@@ -184,8 +184,8 @@ class NftController extends BaseController {
       return this.success(res, {
         name: "FibonroseTrust ID Card",
         description: "Secure Digital Identity NFT Card issued by FibonroseTrust",
-        image: `https://api.fibonrosetrust.com/nft/image/${id}`,
-        external_url: `https://app.fibonrosetrust.com/nft/${id}`,
+        image: `https://trust.mbtq.dev/api/nft/image/${id}`,
+        external_url: `https://trust.mbtq.dev/nft/${id}`,
         attributes: [
           { trait_type: "Card Type", value: "Identity" },
           { trait_type: "Trust Level", value: 5 },

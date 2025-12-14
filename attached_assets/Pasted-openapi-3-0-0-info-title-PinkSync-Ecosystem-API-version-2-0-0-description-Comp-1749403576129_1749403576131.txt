@@ -13,11 +13,11 @@ info:
     email: support@pinksync.io
 
 servers:
-  - url: https://api.pinksync.io/v2
+  - url: https://sync.mbtq.dev/v2
     description: Production Environment
-  - url: https://deafauth.pinksync.io/v1
+  - url: https://auth.mbtq.dev/v1
     description: DeafAuth Service
-  - url: https://fibonrose.mbtquniverse.com/v1
+  - url: https://trust.mbtq.dev/v1
     description: FibonRose Service
 
 tags:

@@ -10,7 +10,7 @@ export const corsMiddleware = (
 ) => {
   // List of allowed origins
   const allowedOrigins = [
-    "https://fibonrose.mbtquniverse.com",
+    "https://trust.mbtq.dev",
     "http://localhost:3000",
     "http://localhost:5000",
   ];
