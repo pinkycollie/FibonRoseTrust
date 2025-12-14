@@ -15,7 +15,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { WebhookService } from './services/webhook';
-import { XanoIntegration } from './services/integrations/xano';
+// import { XanoIntegration } from './services/integrations/xano'; // Removed - choosing different approach
 import { universalWebhookManager } from './services/universal-webhook';
 import { setupAuth, requiresDeveloper } from './auth';
 import { pinkSyncService } from './services/pinksync-integration';
@@ -303,55 +303,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Test Xano connection API
-  app.post('/api/xano/test-connection', async (req: Request, res: Response) => {
-    try {
-      const { apiKey, baseUrl } = req.body;
-      
-      if (!apiKey) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'API key is required' 
-        });
-      }
-      
-      // Initialize Xano integration with the provided API key
-      XanoIntegration.setApiKey(apiKey);
-      
-      // Test the connection
-      const connectionSuccess = await XanoIntegration.testConnection();
-      
-      if (connectionSuccess) {
-        // Try to fetch some metadata to further validate the connection
-        try {
-          const metadata = await XanoIntegration.getApiMetadata();
-          
-          return res.status(200).json({ 
-            success: true,
-            message: 'Successfully connected to Xano API',
-            metadata
-          });
-        } catch (error) {
-          // Connection successful but couldn't get metadata
-          return res.status(200).json({ 
-            success: true,
-            message: 'Connected to Xano API, but metadata retrieval failed'
-          });
-        }
-      } else {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Failed to connect to Xano with the provided API key'
-        });
-      }
-    } catch (error) {
-      console.error('Error testing Xano connection:', error);
-      res.status(500).json({ 
-        success: false,
-        message: 'Error testing Xano connection',
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
+  // Xano integration removed - choosing different approach
+  // app.post('/api/xano/test-connection', async (req: Request, res: Response) => {
+  //   try {
+  //     const { apiKey, baseUrl } = req.body;
+  //     
+  //     if (!apiKey) {
+  //       return res.status(400).json({ 
+  //         success: false,
+  //         message: 'API key is required' 
+  //       });
+  //     }
+  //     
+  //     // Initialize Xano integration with the provided API key
+  //     XanoIntegration.setApiKey(apiKey);
+  //     
+  //     // Test the connection
+  //     const connectionSuccess = await XanoIntegration.testConnection();
+  //     
+  //     if (connectionSuccess) {
+  //       // Try to fetch some metadata to further validate the connection
+  //       try {
+  //         const metadata = await XanoIntegration.getApiMetadata();
+  //         
+  //         return res.status(200).json({ 
+  //           success: true,
+  //           message: 'Successfully connected to Xano API',
+  //           metadata
+  //         });
+  //       } catch (error) {
+  //         // Connection successful but couldn't get metadata
+  //         return res.status(200).json({ 
+  //           success: true,
+  //           message: 'Connected to Xano API, but metadata retrieval failed'
+  //         });
+  //       }
+  //     } else {
+  //       return res.status(400).json({ 
+  //         success: false,
+  //         message: 'Failed to connect to Xano with the provided API key'
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error('Error testing Xano connection:', error);
+  //     res.status(500).json({ 
+  //       success: false,
+  //       message: 'Error testing Xano connection',
+  //       error: error instanceof Error ? error.message : String(error)
+  //     });
+  //   }
+  // });
 
   // Web3 and blockchain endpoints
   app.post('/api/web3/nft/mint', async (req: Request, res: Response) => {
@@ -1206,42 +1207,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Xano integration removed - choosing different approach
   // Dedicated Xano webhook endpoint for x8ki-letl-twmt.n7.xano.io
-  app.post('/api/webhook/xano', async (req: Request, res: Response) => {
-    try {
-      // Process the webhook using the dedicated integration
-      const normalizedData = XanoIntegration.processWebhook(
-        req.headers as Record<string, string>, 
-        req.body
-      );
-      
-      // For debugging
-      console.log('Received Xano webhook:', {
-        eventType: normalizedData.eventType,
-        source: normalizedData.source,
-        timestamp: normalizedData.timestamp
-      });
-      
-      // Process the webhook
-      const delivery = await WebhookService.processIncomingWebhook(
-        'xano', 
-        normalizedData.payload, 
-        req.headers as Record<string, string>
-      );
-      
-      res.status(202).json({
-        message: 'Xano webhook processed',
-        deliveryId: delivery.id,
-        status: delivery.status
-      });
-    } catch (error) {
-      console.error('Error processing Xano webhook:', error);
-      res.status(500).json({ 
-        message: 'Failed to process Xano webhook', 
-        error: error instanceof Error ? error.message : String(error) 
-      });
-    }
-  });
+  // app.post('/api/webhook/xano', async (req: Request, res: Response) => {
+  //   try {
+  //     // Process the webhook using the dedicated integration
+  //     const normalizedData = XanoIntegration.processWebhook(
+  //       req.headers as Record<string, string>, 
+  //       req.body
+  //     );
+  //     
+  //     // For debugging
+  //     console.log('Received Xano webhook:', {
+  //       eventType: normalizedData.eventType,
+  //       source: normalizedData.source,
+  //       timestamp: normalizedData.timestamp
+  //     });
+  //     
+  //     // Process the webhook
+  //     const delivery = await WebhookService.processIncomingWebhook(
+  //       'xano', 
+  //       normalizedData.payload, 
+  //       req.headers as Record<string, string>
+  //     );
+  //     
+  //     res.status(202).json({
+  //       message: 'Xano webhook processed',
+  //       deliveryId: delivery.id,
+  //       status: delivery.status
+  //     });
+  //   } catch (error) {
+  //     console.error('Error processing Xano webhook:', error);
+  //     res.status(500).json({ 
+  //       message: 'Failed to process Xano webhook', 
+  //       error: error instanceof Error ? error.message : String(error) 
+  //     });
+  //   }
+  // });
   
   // Webhook subscription management endpoints
   
