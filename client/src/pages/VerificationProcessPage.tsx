@@ -21,7 +21,8 @@ interface VerificationStep {
 }
 
 export default function VerificationProcessPage() {
-  const [userId] = useState(1); // Mock user ID
+  // TODO: Replace with actual authenticated user from Auth0 context
+  const [userId] = useState(1); // Mock user ID for demonstration
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
 
   // Fetch user's professional profiles

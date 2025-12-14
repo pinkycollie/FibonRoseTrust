@@ -305,11 +305,24 @@ class ProfessionalController extends BaseController {
       const role = await storage.getProfessionalRole(profile.roleId);
       if (role && role.requiredVerifications) {
         const requiredVerifications = role.requiredVerifications as number[];
+        
+        // Map verification type IDs to meaningful step names
+        const stepNames: Record<number, string> = {
+          1: 'Government ID Verification',
+          2: 'Biometric Verification',
+          3: 'Professional License Verification',
+          4: 'Background Check',
+          5: 'Certification Verification'
+        };
+        
         for (let i = 0; i < requiredVerifications.length; i++) {
+          const verificationTypeId = requiredVerifications[i];
+          const verificationType = await storage.getVerificationType(verificationTypeId);
+          
           await storage.createVerificationStep({
             userId: profile.userId,
             profileId: profile.id,
-            stepName: `Verification ${i + 1}`,
+            stepName: verificationType?.displayName || stepNames[verificationTypeId] || `Verification Step ${i + 1}`,
             stepOrder: i + 1,
             status: 'PENDING'
           });
