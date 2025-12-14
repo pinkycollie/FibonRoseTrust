@@ -5,7 +5,7 @@
 The Professional Directory API enables deaf communities and organizations to access verified professional profiles through a RESTful interface. This API provides search, filtering, and profile management capabilities for professionals serving the deaf community.
 
 **Base URL:** `/api/v1/professionals`  
-**Authentication:** Auth0 (for profile management)  
+**Authentication:** DeafAUTH-Fibonrose (for profile management)  
 **Public Access:** Directory search is publicly accessible
 
 ## Authentication
@@ -58,7 +58,7 @@ Returns all available professional role categories.
 
 **Example Request:**
 ```bash
-curl https://api.fibonrosetrust.com/api/v1/professionals/roles/1
+curl https://trust.mbtq.dev/api/v1/professionals/roles/1
 ```
 
 **Example Response:**
@@ -100,7 +100,7 @@ Search for verified professionals in the public directory. This endpoint is desi
 **Example Request:**
 ```bash
 # Find ASL fluent healthcare providers in California
-curl "https://api.fibonrosetrust.com/api/v1/professionals/directory?category=healthcare&location=California&aslFluent=true&page=1&limit=10"
+curl "https://trust.mbtq.dev/api/v1/professionals/directory?category=healthcare&location=California&aslFluent=true&page=1&limit=10"
 ```
 
 **Example Response:**
@@ -192,7 +192,7 @@ Get all professional profiles for a specific user.
 **Example Request:**
 ```bash
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  https://api.fibonrosetrust.com/api/v1/professionals/profiles/user/5
+  https:/trust.mbtq.dev/api/v1/professionals/profiles/user/5
 ```
 
 **Example Response:**
@@ -239,7 +239,7 @@ Get detailed information about a specific professional profile.
 
 **Example Request:**
 ```bash
-curl https://api.fibonrosetrust.com/api/v1/professionals/profiles/1
+curl https://trust.mbtq.dev/api/v1/professionals/profiles/1
 ```
 
 **Example Response:**
@@ -354,7 +354,7 @@ curl -X POST \
     "location": "San Francisco, California",
     "aslFluent": true
   }' \
-  https://api.fibonrosetrust.com/api/v1/professionals/profiles
+  https://trust.mbtq.dev/api/v1/professionals/profiles
 ```
 
 **Example Response:**
@@ -397,7 +397,7 @@ curl -X PATCH \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"yearsOfExperience": 13}' \
-  https://api.fibonrosetrust.com/api/v1/professionals/profiles/1
+  https://trust.mbtq.dev/api/v1/professionals/profiles/1
 ```
 
 ## Badges
@@ -565,7 +565,7 @@ To receive real-time updates about profile verifications and badge awards, confi
 ```javascript
 // 1. Search for ASL interpreters in New York
 const response = await fetch(
-  'https://api.fibonrosetrust.com/api/v1/professionals/directory?' +
+  'https://trust.mbtq.dev/api/v1/professionals/directory?' +
   'category=communication&' +
   'roleId=2&' +
   'location=New York&' +
@@ -586,7 +586,7 @@ profiles.forEach(profile => {
 
 // 3. Get detailed profile
 const detailResponse = await fetch(
-  `https://api.fibonrosetrust.com/api/v1/professionals/profiles/${profiles[0].id}`
+  `https://trust.mbtq.dev/api/v1/professionals/profiles/${profiles[0].id}`
 );
 
 const detailedProfile = await detailResponse.json();
