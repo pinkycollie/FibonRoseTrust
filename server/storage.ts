@@ -7,7 +7,12 @@ import {
   webhookSubscriptions, type WebhookSubscription, type InsertWebhookSubscription,
   webhookDeliveries, type WebhookDelivery, type InsertWebhookDelivery,
   notionIntegrations, type NotionIntegration, type InsertNotionIntegration,
-  xanoIntegrations, type XanoIntegration, type InsertXanoIntegration
+  xanoIntegrations, type XanoIntegration, type InsertXanoIntegration,
+  professionalRoles, type ProfessionalRole, type InsertProfessionalRole,
+  professionalProfiles, type ProfessionalProfile, type InsertProfessionalProfile,
+  badges, type Badge, type InsertBadge,
+  userBadges, type UserBadge, type InsertUserBadge,
+  verificationSteps, type VerificationStep, type InsertVerificationStep
 } from "@shared/schema";
 
 // Simple Fibonacci functions for server-side trust score calculation
@@ -89,6 +94,34 @@ export interface IStorage {
   updateXanoIntegration(id: number, updates: Partial<XanoIntegration>): Promise<XanoIntegration | undefined>;
   deleteXanoIntegration(id: number): Promise<boolean>;
   
+  // Professional role methods
+  getProfessionalRoles(): Promise<ProfessionalRole[]>;
+  getProfessionalRole(id: number): Promise<ProfessionalRole | undefined>;
+  getProfessionalRoleByName(name: string): Promise<ProfessionalRole | undefined>;
+  createProfessionalRole(role: InsertProfessionalRole): Promise<ProfessionalRole>;
+  
+  // Professional profile methods
+  getProfessionalProfiles(filters?: { userId?: number; roleId?: number; isVerified?: boolean; isPubliclyVisible?: boolean }): Promise<ProfessionalProfile[]>;
+  getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined>;
+  createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile>;
+  updateProfessionalProfile(id: number, updates: Partial<ProfessionalProfile>): Promise<ProfessionalProfile | undefined>;
+  
+  // Badge methods
+  getBadges(): Promise<Badge[]>;
+  getBadge(id: number): Promise<Badge | undefined>;
+  createBadge(badge: InsertBadge): Promise<Badge>;
+  
+  // User badge methods
+  getUserBadges(userId: number): Promise<UserBadge[]>;
+  getUserBadge(id: number): Promise<UserBadge | undefined>;
+  awardBadge(userBadge: InsertUserBadge): Promise<UserBadge>;
+  
+  // Verification step methods
+  getVerificationSteps(userId: number, profileId?: number): Promise<VerificationStep[]>;
+  getVerificationStep(id: number): Promise<VerificationStep | undefined>;
+  createVerificationStep(step: InsertVerificationStep): Promise<VerificationStep>;
+  updateVerificationStep(id: number, updates: Partial<VerificationStep>): Promise<VerificationStep | undefined>;
+  
   // Initialization methods
   seedInitialData(): Promise<void>;
 }
@@ -103,6 +136,11 @@ export class MemStorage implements IStorage {
   private webhookDeliveries: Map<number, WebhookDelivery>;
   private notionIntegrations: Map<number, NotionIntegration>;
   private xanoIntegrations: Map<number, XanoIntegration>;
+  private professionalRoles: Map<number, ProfessionalRole>;
+  private professionalProfiles: Map<number, ProfessionalProfile>;
+  private badges: Map<number, Badge>;
+  private userBadges: Map<number, UserBadge>;
+  private verificationSteps: Map<number, VerificationStep>;
   
   private userId: number;
   private verificationTypeId: number;
@@ -113,6 +151,11 @@ export class MemStorage implements IStorage {
   private webhookDeliveryId: number;
   private notionIntegrationId: number;
   private xanoIntegrationId: number;
+  private professionalRoleId: number;
+  private professionalProfileId: number;
+  private badgeId: number;
+  private userBadgeId: number;
+  private verificationStepId: number;
 
   constructor() {
     this.users = new Map();
@@ -124,6 +167,11 @@ export class MemStorage implements IStorage {
     this.webhookDeliveries = new Map();
     this.notionIntegrations = new Map();
     this.xanoIntegrations = new Map();
+    this.professionalRoles = new Map();
+    this.professionalProfiles = new Map();
+    this.badges = new Map();
+    this.userBadges = new Map();
+    this.verificationSteps = new Map();
     
     this.userId = 1;
     this.verificationTypeId = 1;
@@ -134,6 +182,11 @@ export class MemStorage implements IStorage {
     this.webhookDeliveryId = 1;
     this.notionIntegrationId = 1;
     this.xanoIntegrationId = 1;
+    this.professionalRoleId = 1;
+    this.professionalProfileId = 1;
+    this.badgeId = 1;
+    this.userBadgeId = 1;
+    this.verificationStepId = 1;
   }
 
   // User methods
@@ -149,7 +202,16 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      avatarUrl: insertUser.avatarUrl ?? null,
+      auth0Sub: insertUser.auth0Sub ?? null,
+      role: insertUser.role ?? 'user',
+      emailVerified: insertUser.emailVerified ?? false,
+      profilePictureUrl: insertUser.profilePictureUrl ?? null,
+      lastLogin: insertUser.lastLogin ?? null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -187,6 +249,8 @@ export class MemStorage implements IStorage {
     const newVerification: Verification = { 
       ...verification, 
       id,
+      data: verification.data ?? {},
+      verifiedBy: verification.verifiedBy ?? null,
       createdAt,
       verifiedAt: null
     };
@@ -231,7 +295,17 @@ export class MemStorage implements IStorage {
   async createTrustScore(trustScore: InsertTrustScore): Promise<TrustScore> {
     const id = this.trustScoreId++;
     const lastUpdated = new Date();
-    const newTrustScore: TrustScore = { ...trustScore, id, lastUpdated };
+    const newTrustScore: TrustScore = { 
+      ...trustScore, 
+      id, 
+      lastUpdated,
+      score: trustScore.score ?? 0,
+      level: trustScore.level ?? 0,
+      maxScore: trustScore.maxScore ?? 0,
+      verificationCount: trustScore.verificationCount ?? 0,
+      positiveTransactions: trustScore.positiveTransactions ?? 0,
+      totalTransactions: trustScore.totalTransactions ?? 0
+    };
     this.trustScores.set(id, newTrustScore);
     return newTrustScore;
   }
@@ -293,7 +367,11 @@ export class MemStorage implements IStorage {
   
   async createDataPermission(permission: InsertDataPermission): Promise<DataPermission> {
     const id = this.dataPermissionId++;
-    const newPermission: DataPermission = { ...permission, id };
+    const newPermission: DataPermission = { 
+      ...permission, 
+      id,
+      enabled: permission.enabled ?? true
+    };
     this.dataPermissions.set(id, newPermission);
     return newPermission;
   }
@@ -418,6 +496,118 @@ export class MemStorage implements IStorage {
       }
     });
     
+    // Seed professional roles
+    await this.createProfessionalRole({
+      name: 'insurance_agent',
+      displayName: 'Insurance Agent',
+      category: 'financial',
+      description: 'Licensed insurance professional serving the deaf community',
+      requiredVerifications: [governmentIdType.id, biometricType.id],
+      icon: 'shield',
+      isActive: true
+    });
+    
+    await this.createProfessionalRole({
+      name: 'interpreter',
+      displayName: 'Sign Language Interpreter',
+      category: 'communication',
+      description: 'Certified ASL interpreter',
+      requiredVerifications: [governmentIdType.id],
+      icon: 'users',
+      isActive: true
+    });
+    
+    await this.createProfessionalRole({
+      name: 'realtor',
+      displayName: 'Real Estate Agent',
+      category: 'business',
+      description: 'Licensed real estate professional',
+      requiredVerifications: [governmentIdType.id, biometricType.id],
+      icon: 'home',
+      isActive: true
+    });
+    
+    await this.createProfessionalRole({
+      name: 'teacher',
+      displayName: 'Educator',
+      category: 'education',
+      description: 'Certified teacher with deaf education experience',
+      requiredVerifications: [governmentIdType.id, biometricType.id],
+      icon: 'book',
+      isActive: true
+    });
+    
+    await this.createProfessionalRole({
+      name: 'healthcare_provider',
+      displayName: 'Healthcare Provider',
+      category: 'healthcare',
+      description: 'Licensed healthcare professional',
+      requiredVerifications: [governmentIdType.id, biometricType.id],
+      icon: 'heart',
+      isActive: true
+    });
+    
+    await this.createProfessionalRole({
+      name: 'attorney',
+      displayName: 'Attorney',
+      category: 'legal',
+      description: 'Licensed attorney',
+      requiredVerifications: [governmentIdType.id, biometricType.id],
+      icon: 'gavel',
+      isActive: true
+    });
+    
+    // Seed badges
+    await this.createBadge({
+      name: 'identity_verified',
+      displayName: 'Identity Verified',
+      description: 'Government ID verified',
+      icon: '✓',
+      category: 'verification',
+      criteria: { requiredVerifications: ['government_id'] },
+      color: '#10B981'
+    });
+    
+    await this.createBadge({
+      name: 'asl_fluent',
+      displayName: 'ASL Fluent',
+      description: 'Fluent in American Sign Language',
+      icon: '🤟',
+      category: 'professional',
+      criteria: { aslFluent: true },
+      color: '#8B5CF6'
+    });
+    
+    await this.createBadge({
+      name: 'deaf_community_verified',
+      displayName: 'Deaf Community Verified',
+      description: 'Verified member of the deaf community',
+      icon: '👥',
+      category: 'community',
+      criteria: { deafCommunityExperience: true },
+      color: '#3B82F6'
+    });
+    
+    await this.createBadge({
+      name: 'professional_verified',
+      displayName: 'Professional Verified',
+      description: 'Professional credentials verified',
+      icon: '⭐',
+      category: 'professional',
+      criteria: { profileVerified: true },
+      color: '#F59E0B'
+    });
+    
+    await this.createBadge({
+      name: 'trusted_provider',
+      displayName: 'Trusted Provider',
+      description: 'High trust score and positive community feedback',
+      icon: '🏆',
+      category: 'achievement',
+      criteria: { minTrustScore: 8, minVerifications: 3 },
+      color: '#EF4444'
+    });
+    
     // Calculate initial trust score
     await this.updateTrustScore(defaultUser.id);
   }
@@ -437,6 +627,9 @@ export class MemStorage implements IStorage {
     const newSubscription: WebhookSubscription = { 
       ...subscription, 
       id,
+      isActive: subscription.isActive ?? true,
+      partnerId: subscription.partnerId ?? null,
+      headers: subscription.headers ?? {},
       createdAt
     };
     
@@ -484,9 +677,13 @@ export class MemStorage implements IStorage {
       createdAt,
       attempts: 0,
       processedAt: null,
-      statusCode: delivery.statusCode || null,
-      response: delivery.response || null,
-      errorMessage: delivery.errorMessage || null
+      source: delivery.source ?? null,
+      statusCode: delivery.statusCode ?? null,
+      response: delivery.response ?? null,
+      errorMessage: delivery.errorMessage ?? null,
+      requestHeaders: delivery.requestHeaders ?? null,
+      requestPayload: delivery.requestPayload ?? null,
+      responseBody: delivery.responseBody ?? null
     };
     
     this.webhookDeliveries.set(id, newDelivery);
@@ -530,7 +727,14 @@ export class MemStorage implements IStorage {
   
   async createNotionIntegration(integration: InsertNotionIntegration): Promise<NotionIntegration> {
     const id = this.notionIntegrationId++;
-    const newIntegration: NotionIntegration = { ...integration, id, lastSynced: null };
+    const newIntegration: NotionIntegration = { 
+      ...integration, 
+      id, 
+      isActive: integration.isActive ?? true,
+      databaseId: integration.databaseId ?? null,
+      settings: integration.settings ?? {},
+      lastSynced: null 
+    };
     this.notionIntegrations.set(id, newIntegration);
     return newIntegration;
   }
@@ -567,9 +771,12 @@ export class MemStorage implements IStorage {
     const id = this.xanoIntegrationId++;
     const newIntegration: XanoIntegration = { 
       ...integration, 
-      id, 
-      lastSynced: null,
-      createdAt: new Date()
+      id,
+      isActive: integration.isActive ?? true,
+      webhookSecret: integration.webhookSecret ?? null,
+      aiEnabled: integration.aiEnabled ?? false,
+      settings: integration.settings ?? {},
+      lastSynced: null
     };
     this.xanoIntegrations.set(id, newIntegration);
     return newIntegration;
@@ -590,6 +797,182 @@ export class MemStorage implements IStorage {
   
   async deleteXanoIntegration(id: number): Promise<boolean> {
     return this.xanoIntegrations.delete(id);
+  }
+  
+  // Professional role methods
+  async getProfessionalRoles(): Promise<ProfessionalRole[]> {
+    return Array.from(this.professionalRoles.values());
+  }
+  
+  async getProfessionalRole(id: number): Promise<ProfessionalRole | undefined> {
+    return this.professionalRoles.get(id);
+  }
+  
+  async getProfessionalRoleByName(name: string): Promise<ProfessionalRole | undefined> {
+    return Array.from(this.professionalRoles.values()).find(role => role.name === name);
+  }
+  
+  async createProfessionalRole(role: InsertProfessionalRole): Promise<ProfessionalRole> {
+    const id = this.professionalRoleId++;
+    const newRole: ProfessionalRole = { 
+      ...role, 
+      id,
+      isActive: role.isActive ?? true,
+      requiredVerifications: role.requiredVerifications ?? []
+    };
+    this.professionalRoles.set(id, newRole);
+    return newRole;
+  }
+  
+  // Professional profile methods
+  async getProfessionalProfiles(filters?: { userId?: number; roleId?: number; isVerified?: boolean; isPubliclyVisible?: boolean }): Promise<ProfessionalProfile[]> {
+    let profiles = Array.from(this.professionalProfiles.values());
+    
+    if (filters) {
+      if (filters.userId !== undefined) {
+        profiles = profiles.filter(p => p.userId === filters.userId);
+      }
+      if (filters.roleId !== undefined) {
+        profiles = profiles.filter(p => p.roleId === filters.roleId);
+      }
+      if (filters.isVerified !== undefined) {
+        profiles = profiles.filter(p => p.isVerified === filters.isVerified);
+      }
+      if (filters.isPubliclyVisible !== undefined) {
+        profiles = profiles.filter(p => p.isPubliclyVisible === filters.isPubliclyVisible);
+      }
+    }
+    
+    return profiles;
+  }
+  
+  async getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined> {
+    return this.professionalProfiles.get(id);
+  }
+  
+  async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
+    const id = this.professionalProfileId++;
+    const now = new Date();
+    const newProfile: ProfessionalProfile = { 
+      ...profile, 
+      id,
+      isVerified: profile.isVerified ?? false,
+      verificationStatus: profile.verificationStatus ?? 'PENDING',
+      bio: profile.bio ?? null,
+      yearsOfExperience: profile.yearsOfExperience ?? null,
+      location: profile.location ?? null,
+      languages: profile.languages ?? [],
+      aslFluent: profile.aslFluent ?? false,
+      deafCommunityExperience: profile.deafCommunityExperience ?? false,
+      certifications: profile.certifications ?? [],
+      availability: profile.availability ?? null,
+      contactPreferences: profile.contactPreferences ?? {},
+      isPubliclyVisible: profile.isPubliclyVisible ?? false,
+      createdAt: now,
+      updatedAt: now,
+      verifiedAt: null
+    };
+    this.professionalProfiles.set(id, newProfile);
+    return newProfile;
+  }
+  
+  async updateProfessionalProfile(id: number, updates: Partial<ProfessionalProfile>): Promise<ProfessionalProfile | undefined> {
+    const profile = this.professionalProfiles.get(id);
+    if (!profile) return undefined;
+    
+    const updatedProfile: ProfessionalProfile = {
+      ...profile,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.professionalProfiles.set(id, updatedProfile);
+    return updatedProfile;
+  }
+  
+  // Badge methods
+  async getBadges(): Promise<Badge[]> {
+    return Array.from(this.badges.values());
+  }
+  
+  async getBadge(id: number): Promise<Badge | undefined> {
+    return this.badges.get(id);
+  }
+  
+  async createBadge(badge: InsertBadge): Promise<Badge> {
+    const id = this.badgeId++;
+    const newBadge: Badge = { 
+      ...badge, 
+      id,
+      color: badge.color ?? '#3B82F6'
+    };
+    this.badges.set(id, newBadge);
+    return newBadge;
+  }
+  
+  // User badge methods
+  async getUserBadges(userId: number): Promise<UserBadge[]> {
+    return Array.from(this.userBadges.values()).filter(ub => ub.userId === userId);
+  }
+  
+  async getUserBadge(id: number): Promise<UserBadge | undefined> {
+    return this.userBadges.get(id);
+  }
+  
+  async awardBadge(userBadge: InsertUserBadge): Promise<UserBadge> {
+    const id = this.userBadgeId++;
+    const newUserBadge: UserBadge = {
+      ...userBadge,
+      id,
+      metadata: userBadge.metadata ?? {},
+      verifiedBy: userBadge.verifiedBy ?? null,
+      earnedAt: new Date()
+    };
+    this.userBadges.set(id, newUserBadge);
+    return newUserBadge;
+  }
+  
+  // Verification step methods
+  async getVerificationSteps(userId: number, profileId?: number): Promise<VerificationStep[]> {
+    let steps = Array.from(this.verificationSteps.values()).filter(s => s.userId === userId);
+    
+    if (profileId !== undefined) {
+      steps = steps.filter(s => s.profileId === profileId);
+    }
+    
+    return steps.sort((a, b) => a.stepOrder - b.stepOrder);
+  }
+  
+  async getVerificationStep(id: number): Promise<VerificationStep | undefined> {
+    return this.verificationSteps.get(id);
+  }
+  
+  async createVerificationStep(step: InsertVerificationStep): Promise<VerificationStep> {
+    const id = this.verificationStepId++;
+    const newStep: VerificationStep = {
+      ...step,
+      id,
+      status: step.status ?? 'PENDING',
+      profileId: step.profileId ?? null,
+      data: step.data ?? {},
+      notes: step.notes ?? null,
+      completedAt: null
+    };
+    this.verificationSteps.set(id, newStep);
+    return newStep;
+  }
+  
+  async updateVerificationStep(id: number, updates: Partial<VerificationStep>): Promise<VerificationStep | undefined> {
+    const step = this.verificationSteps.get(id);
+    if (!step) return undefined;
+    
+    const updatedStep: VerificationStep = {
+      ...step,
+      ...updates
+    };
+    
+    this.verificationSteps.set(id, updatedStep);
+    return updatedStep;
   }
 }
 

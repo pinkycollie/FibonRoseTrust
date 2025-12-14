@@ -111,6 +111,75 @@ export const xanoIntegrations = pgTable("xano_integrations", {
   settings: jsonb("settings").default({})
 });
 
+// Professional roles and categories
+export const professionalRoles = pgTable("professional_roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  category: text("category").notNull(), // e.g., "healthcare", "legal", "financial", "education"
+  description: text("description").notNull(),
+  requiredVerifications: jsonb("required_verifications").default([]), // Array of verification type IDs
+  icon: text("icon").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+});
+
+// Professional profiles in Fibonrose directory
+export const professionalProfiles = pgTable("professional_profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  roleId: integer("role_id").notNull().references(() => professionalRoles.id),
+  isVerified: boolean("is_verified").notNull().default(false),
+  verificationStatus: text("verification_status").notNull().default("PENDING"), // PENDING, IN_PROGRESS, VERIFIED, REJECTED
+  bio: text("bio"),
+  yearsOfExperience: integer("years_of_experience"),
+  location: text("location"),
+  languages: text("languages").array(),
+  aslFluent: boolean("asl_fluent").notNull().default(false),
+  deafCommunityExperience: boolean("deaf_community_experience").notNull().default(false),
+  certifications: jsonb("certifications").default([]),
+  availability: text("availability"),
+  contactPreferences: jsonb("contact_preferences").default({}),
+  isPubliclyVisible: boolean("is_publicly_visible").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  verifiedAt: timestamp("verified_at"),
+});
+
+// Badges earned by users
+export const badges = pgTable("badges", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),
+  category: text("category").notNull(), // "verification", "achievement", "community", "professional"
+  criteria: jsonb("criteria").notNull(), // Requirements to earn this badge
+  color: text("color").default("#3B82F6"), // Badge color
+});
+
+// User badges - tracks which badges users have earned
+export const userBadges = pgTable("user_badges", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  badgeId: integer("badge_id").notNull().references(() => badges.id),
+  earnedAt: timestamp("earned_at").notNull().defaultNow(),
+  verifiedBy: text("verified_by"), // Who/what verified this badge
+  metadata: jsonb("metadata").default({}), // Additional info about earning the badge
+});
+
+// Verification steps - tracks progress through verification process
+export const verificationSteps = pgTable("verification_steps", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  profileId: integer("profile_id").references(() => professionalProfiles.id),
+  stepName: text("step_name").notNull(),
+  stepOrder: integer("step_order").notNull(),
+  status: text("status").notNull().default("PENDING"), // PENDING, IN_PROGRESS, COMPLETED, FAILED
+  completedAt: timestamp("completed_at"),
+  data: jsonb("data").default({}),
+  notes: text("notes"),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -151,6 +220,21 @@ export const insertXanoIntegrationSchema = createInsertSchema(xanoIntegrations).
   lastSynced: true
 });
 
+// Professional profile schemas
+export const insertProfessionalRoleSchema = createInsertSchema(professionalRoles);
+export const insertProfessionalProfileSchema = createInsertSchema(professionalProfiles).omit({
+  createdAt: true,
+  updatedAt: true,
+  verifiedAt: true
+});
+export const insertBadgeSchema = createInsertSchema(badges);
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({
+  earnedAt: true
+});
+export const insertVerificationStepSchema = createInsertSchema(verificationSteps).omit({
+  completedAt: true
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -172,6 +256,18 @@ export type NotionIntegration = typeof notionIntegrations.$inferSelect;
 export type InsertNotionIntegration = z.infer<typeof insertNotionIntegrationSchema>;
 export type XanoIntegration = typeof xanoIntegrations.$inferSelect;
 export type InsertXanoIntegration = z.infer<typeof insertXanoIntegrationSchema>;
+
+// Professional profile types
+export type ProfessionalRole = typeof professionalRoles.$inferSelect;
+export type InsertProfessionalRole = z.infer<typeof insertProfessionalRoleSchema>;
+export type ProfessionalProfile = typeof professionalProfiles.$inferSelect;
+export type InsertProfessionalProfile = z.infer<typeof insertProfessionalProfileSchema>;
+export type Badge = typeof badges.$inferSelect;
+export type InsertBadge = z.infer<typeof insertBadgeSchema>;
+export type UserBadge = typeof userBadges.$inferSelect;
+export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
+export type VerificationStep = typeof verificationSteps.$inferSelect;
+export type InsertVerificationStep = z.infer<typeof insertVerificationStepSchema>;
 
 // Event types for webhook system
 export const EventTypes = {
@@ -238,7 +334,24 @@ export const EventTypes = {
   
   // PinkSync events
   PINKSYNC_WEBHOOK_RECEIVED: 'pinksync.webhook_received',
-  PINKSYNC_TRIGGER_ACTIVATED: 'pinksync.trigger_activated'
+  PINKSYNC_TRIGGER_ACTIVATED: 'pinksync.trigger_activated',
+  
+  // Professional Profile events
+  PROFILE_CREATED: 'profile.created',
+  PROFILE_UPDATED: 'profile.updated',
+  PROFILE_VERIFIED: 'profile.verified',
+  PROFILE_REJECTED: 'profile.rejected',
+  PROFILE_PUBLISHED: 'profile.published',
+  PROFILE_UNPUBLISHED: 'profile.unpublished',
+  
+  // Badge events
+  BADGE_EARNED: 'badge.earned',
+  BADGE_REVOKED: 'badge.revoked',
+  
+  // Verification Step events
+  STEP_STARTED: 'step.started',
+  STEP_COMPLETED: 'step.completed',
+  STEP_FAILED: 'step.failed',
 } as const;
 
 export type EventType = typeof EventTypes[keyof typeof EventTypes];

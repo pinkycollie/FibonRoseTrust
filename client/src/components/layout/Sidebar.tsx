@@ -31,6 +31,20 @@ const userNavItems: NavItem[] = [
     roles: ['user', 'developer', 'admin']
   },
   { 
+    href: "/professional-directory", 
+    label: "Directory", 
+    icon: "groups",
+    description: "Find verified professionals",
+    roles: ['user', 'developer', 'admin']
+  },
+  { 
+    href: "/verification-process", 
+    label: "Process", 
+    icon: "fact_check",
+    description: "Track verification progress",
+    roles: ['user', 'developer', 'admin']
+  },
+  { 
     href: "/web3", 
     label: "Web3", 
     icon: "currency_bitcoin",
