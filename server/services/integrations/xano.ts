@@ -3,9 +3,12 @@ import axios from 'axios';
 /**
  * XanoIntegration class for interacting with Xano API
  * Provides methods for testing connection, getting metadata, and processing webhooks
+ * Supports both static methods (for legacy code) and instance methods (for new usage)
  */
 export class XanoIntegration {
+  // Static API key for legacy static methods
   private static apiKey: string;
+  // Instance API key for instance methods
   private apiKey: string;
   private baseUrl: string;
 
