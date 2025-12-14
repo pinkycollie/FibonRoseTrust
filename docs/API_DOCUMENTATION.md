@@ -596,6 +596,6 @@ console.log('Full profile:', detailedProfile);
 ## Support
 
 For API support or to report issues:
-- Email: api-support@fibonrosetrust.com
-- Documentation: https://docs.fibonrosetrust.com
+- Email: fibonrose@mbtq.dev
+- Documentation: https://docs.fibonrose.mbtq.dev
 - GitHub Issues: https://github.com/fibonrosetrust/api-docs
