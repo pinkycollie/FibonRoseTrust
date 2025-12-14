@@ -7,7 +7,7 @@ The FibonroseTrust REST API system provides a comprehensive set of endpoints for
 ## Base URL
 
 ```
-https://fibonrose.mbtq.dev
+https://trust.mbtq.dev
 ```
 
 ## API Versioning
@@ -15,7 +15,7 @@ https://fibonrose.mbtq.dev
 The API uses versioning to ensure backward compatibility as new features are added. The current version is v1.
 
 ```
-https://fibonrose.mbtq.dev/v1
+https://trust.mbtq.dev/v1
 ```
 
 ## Response Format

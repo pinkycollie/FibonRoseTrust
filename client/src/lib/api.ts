@@ -34,7 +34,7 @@ export class FibonroseTrustApi {
     // In production, check if we need to use the full domain
     const isProd = process.env.NODE_ENV === 'production';
     this.baseUrl = isProd && !baseUrl.startsWith('http') 
-      ? `https://fibonrose.mbtquniverse.com${baseUrl}`
+      ? `https://trust.mbtq.dev${baseUrl}`
       : baseUrl;
     this.apiVersion = apiVersion;
     

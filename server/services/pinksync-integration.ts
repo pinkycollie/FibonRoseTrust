@@ -75,9 +75,9 @@ export class PinkSyncIntegration {
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = process.env.PINKSYNC_API_URL || 'https://api.pinksync.io/v2';
-    this.deafAuthUrl = process.env.DEAFAUTH_API_URL || 'https://deafauth.pinksync.io/v1';
-    this.fibonRoseUrl = process.env.FIBONROSE_API_URL || 'https://fibonrose.mbtquniverse.com/v1';
+    this.baseUrl = process.env.PINKSYNC_API_URL || 'https://sync.mbtq.dev/v2';
+    this.deafAuthUrl = process.env.DEAFAUTH_API_URL || 'https://auth.mbtq.dev/v1';
+    this.fibonRoseUrl = process.env.FIBONROSE_API_URL || 'https://trust.mbtq.dev/v1';
     this.apiKey = process.env.PINKSYNC_API_KEY || '';
   }
 
