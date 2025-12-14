@@ -11,7 +11,7 @@ import { Request, Response } from 'express';
 import { BaseController } from '../base.controller';
 import { z } from 'zod';
 import { insertNotionIntegrationSchema, insertXanoIntegrationSchema } from '@shared/schema';
-import { XanoIntegration } from '../../../services/integrations/xano';
+// import { XanoIntegration } from '../../../services/integrations/xano'; // Removed - choosing different approach
 
 // Xano test connection schema
 const xanoTestConnectionSchema = z.object({
@@ -62,20 +62,20 @@ class IntegrationController extends BaseController {
       this.deleteNotionIntegration.bind(this)
     );
     
-    // === Xano integrations ===
+    // === Xano integrations - removed, choosing different approach ===
     // Test Xano connection
-    this.router.post('/xano/test-connection',
-      this.requireAuth.bind(this),
-      this.validate(xanoTestConnectionSchema),
-      this.testXanoConnection.bind(this)
-    );
+    // this.router.post('/xano/test-connection',
+    //   this.requireAuth.bind(this),
+    //   this.validate(xanoTestConnectionSchema),
+    //   this.testXanoConnection.bind(this)
+    // );
     
     // Configure Xano integration
-    this.router.post('/xano/configure',
-      this.requireAuth.bind(this),
-      this.validate(xanoConfigurationSchema),
-      this.configureXanoIntegration.bind(this)
-    );
+    // this.router.post('/xano/configure',
+    //   this.requireAuth.bind(this),
+    //   this.validate(xanoConfigurationSchema),
+    //   this.configureXanoIntegration.bind(this)
+    // );
     
     // List available integrations
     this.router.get('/available',
@@ -201,80 +201,81 @@ class IntegrationController extends BaseController {
     }
   }
 
-  private async testXanoConnection(req: Request, res: Response) {
-    try {
-      const { apiKey, instanceUrl, userId } = req.body;
-      
-      // Validate user exists
-      const user = await this.storage.getUser(userId);
-      if (!user) {
-        return this.error(res, 'User not found', { statusCode: 404 });
-      }
-      
-      // Test connection to Xano
-      const xano = new XanoIntegration(apiKey, instanceUrl);
-      const connectionResult = await xano.testConnection();
-      
-      if (!connectionResult.success) {
-        return this.error(res, connectionResult.error || 'Connection failed', { 
-          statusCode: 400,
-          metadata: { details: connectionResult.details }
-        });
-      }
-      
-      return this.success(res, {
-        success: true,
-        connectionDetails: connectionResult.details,
-        apiVersion: connectionResult.apiVersion
-      });
-    } catch (error: any) {
-      return this.error(res, error, { statusCode: 500 });
-    }
-  }
+  // Xano integration methods removed - choosing different approach
+  // private async testXanoConnection(req: Request, res: Response) {
+  //   try {
+  //     const { apiKey, instanceUrl, userId } = req.body;
+  //     
+  //     // Validate user exists
+  //     const user = await this.storage.getUser(userId);
+  //     if (!user) {
+  //       return this.error(res, 'User not found', { statusCode: 404 });
+  //     }
+  //     
+  //     // Test connection to Xano
+  //     const xano = new XanoIntegration(apiKey, instanceUrl);
+  //     const connectionResult = await xano.testConnection();
+  //     
+  //     if (!connectionResult.success) {
+  //       return this.error(res, connectionResult.error || 'Connection failed', { 
+  //         statusCode: 400,
+  //         metadata: { details: connectionResult.details }
+  //       });
+  //     }
+  //     
+  //     return this.success(res, {
+  //       success: true,
+  //       connectionDetails: connectionResult.details,
+  //       apiVersion: connectionResult.apiVersion
+  //     });
+  //   } catch (error: any) {
+  //     return this.error(res, error, { statusCode: 500 });
+  //   }
+  // }
 
-  private async configureXanoIntegration(req: Request, res: Response) {
-    try {
-      const { apiKey, instanceUrl, userId, webhookEndpoint, dataMapping } = req.body;
-      
-      // Validate user exists
-      const user = await this.storage.getUser(userId);
-      if (!user) {
-        return this.error(res, 'User not found', { statusCode: 404 });
-      }
-      
-      // Test connection first
-      const xano = new XanoIntegration(apiKey, instanceUrl);
-      const connectionResult = await xano.testConnection();
-      
-      if (!connectionResult.success) {
-        return this.error(res, connectionResult.error || 'Connection failed', { 
-          statusCode: 400 
-        });
-      }
-      
-      // Create or update Xano integration
-      // This would need additional storage methods for Xano integrations
-      
-      // Set up webhook if endpoint provided
-      if (webhookEndpoint) {
-        await xano.registerWebhook(webhookEndpoint);
-      }
-      
-      return this.success(res, {
-        userId,
-        instanceUrl,
-        webhookConfigured: !!webhookEndpoint,
-        dataMappingConfigured: !!dataMapping,
-        status: 'ACTIVE',
-        createdAt: new Date().toISOString()
-      }, { 
-        statusCode: 201,
-        message: 'Xano integration configured successfully' 
-      });
-    } catch (error: any) {
-      return this.error(res, error, { statusCode: 500 });
-    }
-  }
+  // private async configureXanoIntegration(req: Request, res: Response) {
+  //   try {
+  //     const { apiKey, instanceUrl, userId, webhookEndpoint, dataMapping } = req.body;
+  //     
+  //     // Validate user exists
+  //     const user = await this.storage.getUser(userId);
+  //     if (!user) {
+  //       return this.error(res, 'User not found', { statusCode: 404 });
+  //     }
+  //     
+  //     // Test connection first
+  //     const xano = new XanoIntegration(apiKey, instanceUrl);
+  //     const connectionResult = await xano.testConnection();
+  //     
+  //     if (!connectionResult.success) {
+  //       return this.error(res, connectionResult.error || 'Connection failed', { 
+  //         statusCode: 400 
+  //       });
+  //     }
+  //     
+  //     // Create or update Xano integration
+  //     // This would need additional storage methods for Xano integrations
+  //     
+  //     // Set up webhook if endpoint provided
+  //     if (webhookEndpoint) {
+  //       await xano.registerWebhook(webhookEndpoint);
+  //     }
+  //     
+  //     return this.success(res, {
+  //       userId,
+  //       instanceUrl,
+  //       webhookConfigured: !!webhookEndpoint,
+  //       dataMappingConfigured: !!dataMapping,
+  //       status: 'ACTIVE',
+  //       createdAt: new Date().toISOString()
+  //     }, { 
+  //       statusCode: 201,
+  //       message: 'Xano integration configured successfully' 
+  //     });
+  //   } catch (error: any) {
+  //     return this.error(res, error, { statusCode: 500 });
+  //   }
+  // }
 
   private async listAvailableIntegrations(req: Request, res: Response) {
     try {
@@ -287,13 +288,14 @@ class IntegrationController extends BaseController {
           status: 'ACTIVE',
           documentationUrl: '/docs/integrations/notion'
         },
-        {
-          id: 'xano',
-          name: 'Xano',
-          description: 'Connect to Xano for no-code backend integration',
-          status: 'ACTIVE',
-          documentationUrl: '/docs/integrations/xano'
-        },
+        // Xano integration removed - choosing different approach
+        // {
+        //   id: 'xano',
+        //   name: 'Xano',
+        //   description: 'Connect to Xano for no-code backend integration',
+        //   status: 'ACTIVE',
+        //   documentationUrl: '/docs/integrations/xano'
+        // },
         {
           id: 'civic',
           name: 'Civic Pass',
@@ -316,8 +318,8 @@ class IntegrationController extends BaseController {
       // Get all integrations for this user
       const notionIntegrations = await this.storage.getNotionIntegrations(req.user.id);
       
-      // Xano integrations would need additional storage methods
-      const xanoIntegrations = []; // Placeholder
+      // Xano integration removed - choosing different approach
+      // const xanoIntegrations = []; // Placeholder
       
       return this.success(res, {
         notion: {
@@ -325,11 +327,11 @@ class IntegrationController extends BaseController {
           count: notionIntegrations.length,
           lastSynced: notionIntegrations.length > 0 ? 
             Math.max(...notionIntegrations.map(i => i.lastSynced ? new Date(i.lastSynced).getTime() : 0)) : null
-        },
-        xano: {
-          connected: xanoIntegrations.length > 0,
-          count: xanoIntegrations.length
         }
+        // xano: {
+        //   connected: xanoIntegrations.length > 0,
+        //   count: xanoIntegrations.length
+        // }
       });
     } catch (error: any) {
       return this.error(res, error, { statusCode: 500 });
