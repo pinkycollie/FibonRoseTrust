@@ -1,0 +1,432 @@
+{
+  "title": "Webhook API Documentation",
+  "description": "API endpoints for managing webhooks and webhook subscriptions in the FibonroseTrust system",
+  "version": "1.0.0",
+  "baseUrl": "/api/v1/webhooks",
+  "endpoints": [
+    {
+      "path": "/subscriptions",
+      "method": "GET",
+      "description": "Get all webhook subscriptions",
+      "parameters": {
+        "query": [
+          {
+            "name": "page",
+            "type": "integer",
+            "description": "Page number for pagination",
+            "required": false,
+            "default": 1
+          },
+          {
+            "name": "limit",
+            "type": "integer",
+            "description": "Number of items per page",
+            "required": false,
+            "default": 10
+          },
+          {
+            "name": "isActive",
+            "type": "boolean",
+            "description": "Filter by active status",
+            "required": false
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "List of webhook subscriptions",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "url": {"type": "string"},
+                    "events": {"type": "array", "items": {"type": "string"}},
+                    "isActive": {"type": "boolean"},
+                    "createdAt": {"type": "string", "format": "date-time"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/subscriptions",
+      "method": "POST",
+      "description": "Create a new webhook subscription",
+      "parameters": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Subscription name",
+              "required": true
+            },
+            "url": {
+              "type": "string",
+              "description": "Webhook endpoint URL",
+              "required": true
+            },
+            "events": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Events to subscribe to",
+              "required": true
+            },
+            "secret": {
+              "type": "string",
+              "description": "Secret for webhook signature verification",
+              "required": false
+            },
+            "headers": {
+              "type": "object",
+              "description": "Custom headers to send with webhooks",
+              "required": false
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Webhook subscription created",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "name": {"type": "string"},
+                  "url": {"type": "string"},
+                  "events": {"type": "array", "items": {"type": "string"}},
+                  "isActive": {"type": "boolean"},
+                  "createdAt": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid subscription data"
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/subscriptions/{id}",
+      "method": "GET",
+      "description": "Get a specific webhook subscription",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "integer",
+            "description": "Subscription ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Webhook subscription details",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "name": {"type": "string"},
+                  "url": {"type": "string"},
+                  "events": {"type": "array", "items": {"type": "string"}},
+                  "secret": {"type": "string"},
+                  "headers": {"type": "object"},
+                  "isActive": {"type": "boolean"},
+                  "createdAt": {"type": "string", "format": "date-time"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Subscription not found"
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/subscriptions/{id}",
+      "method": "PATCH",
+      "description": "Update a webhook subscription",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "integer",
+            "description": "Subscription ID",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "url": {"type": "string"},
+            "events": {"type": "array", "items": {"type": "string"}},
+            "secret": {"type": "string"},
+            "headers": {"type": "object"},
+            "isActive": {"type": "boolean"}
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Subscription updated",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "name": {"type": "string"},
+                  "url": {"type": "string"},
+                  "events": {"type": "array", "items": {"type": "string"}},
+                  "isActive": {"type": "boolean"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Subscription not found"
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/subscriptions/{id}",
+      "method": "DELETE",
+      "description": "Delete a webhook subscription",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "integer",
+            "description": "Subscription ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Subscription deleted",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"}
+            }
+          }
+        },
+        "404": {
+          "description": "Subscription not found"
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/subscriptions/{id}/test",
+      "method": "POST",
+      "description": "Send a test event to a webhook subscription",
+      "parameters": {
+        "path": [
+          {
+            "name": "id",
+            "type": "integer",
+            "description": "Subscription ID",
+            "required": true
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Test event sent",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "deliveryId": {"type": "integer"},
+                  "status": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Subscription not found"
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/deliveries",
+      "method": "GET",
+      "description": "Get webhook delivery history",
+      "parameters": {
+        "query": [
+          {
+            "name": "subscriptionId",
+            "type": "integer",
+            "description": "Filter by subscription ID",
+            "required": false
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "description": "Filter by delivery status",
+            "required": false
+          },
+          {
+            "name": "page",
+            "type": "integer",
+            "description": "Page number for pagination",
+            "required": false,
+            "default": 1
+          },
+          {
+            "name": "limit",
+            "type": "integer",
+            "description": "Number of items per page",
+            "required": false,
+            "default": 10
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "List of webhook deliveries",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "integer"},
+                    "subscriptionId": {"type": "integer"},
+                    "eventType": {"type": "string"},
+                    "status": {"type": "string"},
+                    "statusCode": {"type": "integer"},
+                    "attempts": {"type": "integer"},
+                    "createdAt": {"type": "string", "format": "date-time"},
+                    "processedAt": {"type": "string", "format": "date-time"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "requiresAuth": true,
+      "minTrustLevel": 5
+    },
+    {
+      "path": "/{source}",
+      "method": "POST",
+      "description": "Universal webhook endpoint - receive webhooks from any source",
+      "parameters": {
+        "path": [
+          {
+            "name": "source",
+            "type": "string",
+            "description": "Source identifier (e.g., xano, stripe, github)",
+            "required": true
+          }
+        ],
+        "body": {
+          "type": "object",
+          "description": "Webhook payload (format depends on source)"
+        }
+      },
+      "responses": {
+        "202": {
+          "description": "Webhook accepted for processing",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean"},
+              "message": {"type": "string"},
+              "data": {
+                "type": "object",
+                "properties": {
+                  "deliveryId": {"type": "integer"},
+                  "status": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid webhook data"
+        },
+        "500": {
+          "description": "Failed to process webhook"
+        }
+      },
+      "requiresAuth": false
+    }
+  ],
+  "eventTypes": [
+    {
+      "name": "verification.created",
+      "description": "Fired when a new verification is created"
+    },
+    {
+      "name": "verification.updated",
+      "description": "Fired when a verification status is updated"
+    },
+    {
+      "name": "trust_score.updated",
+      "description": "Fired when a user's trust score changes"
+    },
+    {
+      "name": "nft.minted",
+      "description": "Fired when an NFT is minted"
+    },
+    {
+      "name": "user.created",
+      "description": "Fired when a new user is created"
+    }
+  ]
+}
