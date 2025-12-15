@@ -1,1 +1,9 @@
-deleted files of xano as i am choosing different approaches
+/**
+ * Xano Service - Legacy export
+ * 
+ * This file re-exports the XanoIntegration for backward compatibility.
+ * New code should import from './integrations/xano' directly.
+ */
+
+export { XanoIntegration } from './integrations/xano';
+
