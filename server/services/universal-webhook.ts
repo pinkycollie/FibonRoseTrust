@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as csv from 'fast-csv';
 import { log } from '../vite';
 import * as crypto from 'crypto';
+import { SmartWebhookIntelligence } from './integrations/xano';
 
 interface WebhookResult {
   success: boolean;
@@ -22,7 +23,7 @@ class UniversalWebhookManager {
   }
   
   /**
-   * Register default source handlers
+   * Register default source handlers using Smart Webhook Intelligence
    */
   private registerDefaultHandlers(): void {
     // Default handler for Notion
@@ -37,15 +38,21 @@ class UniversalWebhookManager {
       };
     });
     
-    // Default handler for Xano
+    // Smart internal webhook handler (replaces external Xano)
+    this.sourceHandlers.set('internal', (headers, payload) => {
+      // Use Smart Webhook Intelligence for processing
+      return SmartWebhookIntelligence.processWebhook(headers, payload);
+    });
+    
+    // Legacy handler name for backward compatibility
     this.sourceHandlers.set('xano', (headers, payload) => {
-      // Normalize Xano webhook data
-      return {
-        source: 'xano',
-        eventType: payload.event_type || 'data.updated',
-        timestamp: payload.timestamp || new Date().toISOString(),
-        payload
-      };
+      // Route through Smart Webhook Intelligence
+      return SmartWebhookIntelligence.processWebhook(headers, payload);
+    });
+    
+    // Smart handler for any unrecognized sources
+    this.sourceHandlers.set('smart', (headers, payload) => {
+      return SmartWebhookIntelligence.processWebhook(headers, payload);
     });
   }
   
