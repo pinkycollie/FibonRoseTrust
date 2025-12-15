@@ -261,9 +261,9 @@ class UniversalWebhookManager {
           await storage.updateWebhookDeliveryStatus(
             delivery.id,
             'PENDING',
-            null,
-            null,
-            null
+            undefined,
+            undefined,
+            undefined
           );
           
           // Apply trust-based filtering if userId is present in payload
