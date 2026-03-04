@@ -2,6 +2,8 @@
 
 ## AI-Powered Universal Professional Verification & Trust System
 
+**Part of the MBTQ Universe Ecosystem** - Integrated with DeafAuth, PinkSync, and FibonRos
+
 ## Overview
 
 The Fibonrose Trust is an AI-driven comprehensive verification and trust system designed to authenticate and match:
@@ -13,6 +15,16 @@ The Fibonrose Trust is an AI-driven comprehensive verification and trust system 
 This AI-enhanced verification system addresses critical gaps in professional verification while creating an intelligent ecosystem that learns and adapts to serve the deaf community's evolving needs.
 
 ## AI-Powered Architecture
+
+### MBTQ Ecosystem Integration
+
+FibonRoseTrust is part of the **MBTQ Universe** ecosystem:
+- **DeafAuth**: Visual-first authentication for the deaf community
+- **PinkSync**: Accessibility and interface transformation
+- **FibonRos**: Core trust verification engine
+- **NegraRosa**: Security and authorization framework
+
+For detailed ecosystem integration documentation, see [MBTQ Ecosystem Integration](docs/MBTQ_ECOSYSTEM_INTEGRATION.md).
 
 ### Backend Infrastructure
 ```yaml
@@ -115,6 +127,9 @@ The CI/CD workflow is defined in `.github/workflows/ci.yml`.
 # Install dependencies
 npm install
 
+# Set up environment variables (see docs/MBTQ_ECOSYSTEM_INTEGRATION.md)
+cp .env.example .env
+
 # Run in development mode
 npm run dev
 
@@ -123,6 +138,32 @@ npm run build
 
 # Start production server
 npm start
+```
+
+## Documentation
+
+- [MBTQ Ecosystem Integration](docs/MBTQ_ECOSYSTEM_INTEGRATION.md) - Comprehensive ecosystem documentation
+- [Testing Guide](docs/TESTING.md) - How to run and write tests
+- [REST API Overview](docs/REST_API_OVERVIEW.md) - API endpoints documentation
+- [Universal Webhook Hub](docs/UNIVERSAL_WEBHOOK_HUB.md) - Webhook integration guide
+- [DeafFirst Integration](docs/DEAFFIRST_INTEGRATION_SUMMARY.md) - Accessibility features
+- [NFT Identity Journey](docs/NFT_ID_JOURNEY.md) - Blockchain identity system
+
+## Repository Structure
+
+```
+FibonRoseTrust/
+├── client/          # React frontend application
+├── server/          # Express backend API
+│   ├── controllers/ # API route controllers
+│   ├── services/    # Business logic & integrations
+│   ├── middlewares/ # Express middlewares
+│   └── storage.ts   # Database operations
+├── shared/          # Shared schemas and types
+├── test/            # Automated test suite
+├── docs/            # Documentation
+├── tools/           # Development and testing tools
+└── archive/         # Archived old files
 ```
 
 ## License
