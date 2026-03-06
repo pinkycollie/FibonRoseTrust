@@ -2,6 +2,8 @@
 
 ## AI-Powered Universal Professional Verification & Trust System
 
+**Part of the MBTQ Universe Ecosystem** - Integrated with DeafAuth, PinkSync, and FibonRos
+
 ## Overview
 
 The Fibonrose Trust is an AI-driven comprehensive verification and trust system designed to authenticate and match:
@@ -26,6 +28,16 @@ This repository consolidates multiple Fibonrose projects into a single, maintain
 
 ### Technology Stack
 
+### MBTQ Ecosystem Integration
+
+- **DeafAuth**: Visual-first authentication for the deaf community
+- **PinkSync**: Accessibility and interface transformation
+- **FibonRos**: Core trust verification engine
+- **NegraRosa**: Security and authorization framework
+
+For detailed ecosystem integration documentation, see [MBTQ Ecosystem Integration](docs/MBTQ_ECOSYSTEM_INTEGRATION.md).
+
+### Backend Infrastructure
 ```yaml
 Technology_Stack:
   Hosting: "Self-managed VPS with Nginx"
@@ -165,6 +177,25 @@ For detailed testing documentation, see [docs/TESTING.md](docs/TESTING.md).
 ### CI/CD Pipeline
 
 The project uses GitHub Actions for continuous integration and deployment:
+- Automated testing on every push and pull request
+- Multi-version Node.js compatibility testing (18.x, 20.x)
+- Code coverage reporting
+- Type checking
+- Build verification
+
+The CI/CD workflow is defined in `.github/workflows/ci.yml`.
+
+### Getting Started
+
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables (see docs/MBTQ_ECOSYSTEM_INTEGRATION.md)
+cp .env.example .env
+
+# Run in development mode
+npm run dev
 
 1. **CI Pipeline** (`.github/workflows/ci.yml`)
    - Automated testing on every push and pull request
@@ -213,6 +244,32 @@ For complete API documentation, see [docs/REST_API_OVERVIEW.md](docs/REST_API_OV
 - [Testing Guide](docs/TESTING.md) - Testing documentation
 - [REST API Overview](docs/REST_API_OVERVIEW.md) - API documentation
 - [DeafFirst Integration](docs/DEAFFIRST_INTEGRATION_SUMMARY.md) - Accessibility features
+
+## Documentation
+
+- [MBTQ Ecosystem Integration](docs/MBTQ_ECOSYSTEM_INTEGRATION.md) - Comprehensive ecosystem documentation
+- [Testing Guide](docs/TESTING.md) - How to run and write tests
+- [REST API Overview](docs/REST_API_OVERVIEW.md) - API endpoints documentation
+- [Universal Webhook Hub](docs/UNIVERSAL_WEBHOOK_HUB.md) - Webhook integration guide
+- [DeafFirst Integration](docs/DEAFFIRST_INTEGRATION_SUMMARY.md) - Accessibility features
+- [NFT Identity Journey](docs/NFT_ID_JOURNEY.md) - Blockchain identity system
+
+## Repository Structure
+
+```
+FibonRoseTrust/
+├── client/          # React frontend application
+├── server/          # Express backend API
+│   ├── controllers/ # API route controllers
+│   ├── services/    # Business logic & integrations
+│   ├── middlewares/ # Express middlewares
+│   └── storage.ts   # Database operations
+├── shared/          # Shared schemas and types
+├── test/            # Automated test suite
+├── docs/            # Documentation
+├── tools/           # Development and testing tools
+└── archive/         # Archived old files
+```
 
 ## License
 

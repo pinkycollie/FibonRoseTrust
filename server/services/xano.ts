@@ -1,10 +1,10 @@
 /**
- * Xano Integration Service (Deprecated)
- * This file is deprecated as the project has migrated to self-managed infrastructure.
- * Keeping this placeholder for backward compatibility.
+ * Legacy Xano Service File
+ * 
+ * This file is deprecated and kept only for backward compatibility.
+ * Please use the new integration service at: server/services/integrations/xano.ts
+ * 
+ * @deprecated Use XanoIntegration from './integrations/xano' instead
  */
 
-export const XanoService = {
-  deprecated: true,
-  message: 'Xano integration has been deprecated in favor of self-managed infrastructure.'
-};
+export { XanoIntegration } from './integrations/xano';
