@@ -12,6 +12,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Limit permissions of the GITHUB_TOKEN for security
+permissions:
+  contents: read
+  checks: write
+  pull-requests: read
+
 jobs:
   # Stage 1: Fast checks – linting & type checking
   lint-and-typecheck:
