@@ -6,12 +6,13 @@ server/public
 vite.config.ts.*
 *.tar.gz
 
-# Environment files
-.env
-.env.local
-.env.development
-.env.test
-.env.production
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
 
 # Test coverage
 coverage
@@ -22,18 +23,20 @@ coverage
 .vitest
 
 # Logs
-logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# Uploads
-uploads/
-tmp/
+# Environment files
+.env
+.env.local
+.env.*.local
 
-# IDE
-.vscode
+# IDE files
+.vscode/*
+!.vscode/extensions.json
 .idea
 *.swp
 *.swo
@@ -47,3 +50,24 @@ Thumbs.db
 
 # Docker
 .dockerignore
+# Build artifacts
+*.tsbuildinfo
+.eslintcache
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
