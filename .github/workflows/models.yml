@@ -1,0 +1,13 @@
+name: Validate AI Models
+on:
+  push:
+    paths:
+      - 'models/**'
+      - 'src/ai/**'
+jobs:
+  test-models:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test model inference
+        run: npm run test:models
