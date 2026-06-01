@@ -98,9 +98,13 @@ A compact, actionable blueprint you can hand to engineers or paste into a GitHub
 3. Transaction multiplier: \(m_{tx} = 1 + \frac{positiveTransactions}{totalTransactions + 1}\).
 4. Recency decay: \(d = e^{-\lambda \cdot \Delta t}\) where \(\Delta t\) is time since last verification and \(\lambda\) is a tunable decay constant.
 5. Raw score: \(\text{raw} = F_n \cdot m_{tx} \cdot d\).
-6. Normalize and clamp to `[0, 100]` or map to levels (e.g., Level 1..5) for policy use.
+6. Normalize: `score = min(100, max(0, (raw / raw_max) * 100))`, where `raw_max` is the maximum possible raw score given the system's constraints (e.g., maximum verification count, all transactions positive, no decay). Optionally, map the normalized score to discrete levels (e.g., Level 1..5) for policy use.
 
 **Notes**
+- `raw_max` is computed as `F_n_max * m_tx_max * d_max`, where:
+  - `F_n_max` is the Fibonacci value for the maximum allowed verification count,
+  - `m_tx_max` is the maximum transaction multiplier (e.g., all transactions positive),
+  - `d_max` is 1 (no decay).
 - Use distinct verification types only (no double‑counting).
 - Tune `λ` and normalization to match operational risk appetite.
 - Persist only the `verificationCount`, `positiveTransactions`, `totalTransactions`, and `lastUpdated` if zero‑custody is required; compute score on demand.
