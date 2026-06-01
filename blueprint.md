@@ -138,7 +138,7 @@ Use a lightweight broker (Redis Streams, NATS) or signed webhooks for delivery.
 - Tokens are TTL‑limited and single‑use where possible.
 
 **Redaction and CI guards**
-- Redaction middleware strips PII from all outgoing responses; fail requests if PII detected.
+- Redaction middleware strips PII from all outgoing responses; block (do not send) responses if PII cannot be removed.
 - CI static checks: disallow DB client imports in protected routes; fail PRs that import persistence in `/api/v1/*`.
 - Integration tests: assert `content-type: application/json` and no PII in responses.
 
