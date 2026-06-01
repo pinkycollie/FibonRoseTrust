@@ -138,7 +138,7 @@ Use a lightweight broker (Redis Streams, NATS) or signed webhooks for delivery.
 - Private keys in secure keystore; public keys distributed to trusted services.
 
 **Hashed endpoints and webhooks**
-- Generate ephemeral webhook tokens via `HMAC(node_secret, url||nonce||exp)`.
+- Generate ephemeral webhook tokens via `HMAC(node_secret, url + '|' + nonce + '|' + exp)` (concatenate as UTF-8 strings with `|` separator).
 - Tokens are TTL‑limited and single‑use where possible.
 
 **Redaction and CI guards**
