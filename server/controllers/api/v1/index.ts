@@ -5,11 +5,18 @@
  */
 
 import { Router, Request, Response } from 'express';
+import userRoutes from './user.controller';
+import verificationRoutes from './verification.controller';
+import trustScoreRoutes from './trust-score.controller';
+import nftRoutes from './nft.controller';
+import webhookRoutes from './webhook.controller';
+import securityRoutes from './security.controller';
+import integrationRoutes from './integration.controller';
 
 // Create the main router for API v1
 const apiV1Router = Router();
 
-// Temporary implementation until all controllers are properly integrated
+// API v1 info endpoint
 apiV1Router.get('/', (req: Request, res: Response) => {
   res.json({
     version: '1.0.0',
@@ -23,20 +30,10 @@ apiV1Router.get('/', (req: Request, res: Response) => {
       '/security',
       '/integrations'
     ],
-    status: 'Under active development',
+    status: 'active',
     documentation: '/api/docs'
   });
 });
-
-// Once individual controllers are ready, uncomment and integrate them:
-/*
-import userRoutes from './user.controller';
-import verificationRoutes from './verification.controller';
-import trustScoreRoutes from './trust-score.controller';
-import nftRoutes from './nft.controller';
-import webhookRoutes from './webhook.controller';
-import securityRoutes from './security.controller';
-import integrationRoutes from './integration.controller';
 
 // Register all route controllers
 apiV1Router.use('/users', userRoutes);
@@ -46,6 +43,5 @@ apiV1Router.use('/nfts', nftRoutes);
 apiV1Router.use('/webhooks', webhookRoutes);
 apiV1Router.use('/security', securityRoutes);
 apiV1Router.use('/integrations', integrationRoutes);
-*/
 
 export default apiV1Router;
