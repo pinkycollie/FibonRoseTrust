@@ -94,7 +94,7 @@ A compact, actionable blueprint you can hand to engineers or paste into a GitHub
 
 **Algorithm sketch**
 1. Let `n = verificationCount` (distinct verified methods).
-2. Base Fibonacci value: compute \(F_n\) with \(F_1 = 1, F_2 = 2\), recurrence \(F_n = F_{n-1} + F_{n-2}\).
+2. Base Fibonacci value: compute \(F_n\) with \(F_1 = 1, F_2 = 1\), recurrence \(F_n = F_{n-1} + F_{n-2}\).
 3. Transaction multiplier: \(m_{tx} = 1 + \frac{positiveTransactions}{totalTransactions + 1}\).
 4. Recency decay: \(d = e^{-\lambda \cdot \Delta t}\) where \(\Delta t\) is time since last verification and \(\lambda\) is a tunable decay constant.
 5. Raw score: \(\text{raw} = F_n \cdot m_{tx} \cdot d\).
