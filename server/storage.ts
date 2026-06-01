@@ -149,7 +149,16 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      role: insertUser.role ?? "user",
+      emailVerified: insertUser.emailVerified ?? false,
+      avatarUrl: insertUser.avatarUrl ?? null,
+      auth0Sub: insertUser.auth0Sub ?? null,
+      profilePictureUrl: insertUser.profilePictureUrl ?? null,
+      lastLogin: insertUser.lastLogin ?? null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -188,7 +197,9 @@ export class MemStorage implements IStorage {
       ...verification, 
       id,
       createdAt,
-      verifiedAt: null
+      verifiedAt: null,
+      data: verification.data ?? null,
+      verifiedBy: verification.verifiedBy ?? null
     };
     this.verifications.set(id, newVerification);
     
@@ -231,7 +242,17 @@ export class MemStorage implements IStorage {
   async createTrustScore(trustScore: InsertTrustScore): Promise<TrustScore> {
     const id = this.trustScoreId++;
     const lastUpdated = new Date();
-    const newTrustScore: TrustScore = { ...trustScore, id, lastUpdated };
+    const newTrustScore: TrustScore = { 
+      ...trustScore, 
+      id, 
+      lastUpdated,
+      score: trustScore.score ?? 0,
+      level: trustScore.level ?? 0,
+      maxScore: trustScore.maxScore ?? 0,
+      verificationCount: trustScore.verificationCount ?? 0,
+      positiveTransactions: trustScore.positiveTransactions ?? 0,
+      totalTransactions: trustScore.totalTransactions ?? 0
+    };
     this.trustScores.set(id, newTrustScore);
     return newTrustScore;
   }
@@ -293,7 +314,11 @@ export class MemStorage implements IStorage {
   
   async createDataPermission(permission: InsertDataPermission): Promise<DataPermission> {
     const id = this.dataPermissionId++;
-    const newPermission: DataPermission = { ...permission, id };
+    const newPermission: DataPermission = { 
+      ...permission, 
+      id,
+      enabled: permission.enabled ?? true
+    };
     this.dataPermissions.set(id, newPermission);
     return newPermission;
   }
@@ -437,7 +462,10 @@ export class MemStorage implements IStorage {
     const newSubscription: WebhookSubscription = { 
       ...subscription, 
       id,
-      createdAt
+      createdAt,
+      isActive: subscription.isActive ?? true,
+      partnerId: subscription.partnerId ?? null,
+      headers: subscription.headers ?? {}
     };
     
     this.webhookSubscriptions.set(id, newSubscription);
@@ -484,9 +512,13 @@ export class MemStorage implements IStorage {
       createdAt,
       attempts: 0,
       processedAt: null,
-      statusCode: delivery.statusCode || null,
-      response: delivery.response || null,
-      errorMessage: delivery.errorMessage || null
+      statusCode: delivery.statusCode ?? null,
+      response: delivery.response ?? null,
+      errorMessage: delivery.errorMessage ?? null,
+      source: delivery.source ?? null,
+      requestHeaders: delivery.requestHeaders ?? null,
+      requestPayload: delivery.requestPayload ?? null,
+      responseBody: delivery.responseBody ?? null
     };
     
     this.webhookDeliveries.set(id, newDelivery);
@@ -530,7 +562,14 @@ export class MemStorage implements IStorage {
   
   async createNotionIntegration(integration: InsertNotionIntegration): Promise<NotionIntegration> {
     const id = this.notionIntegrationId++;
-    const newIntegration: NotionIntegration = { ...integration, id, lastSynced: null };
+    const newIntegration: NotionIntegration = { 
+      ...integration, 
+      id, 
+      lastSynced: null,
+      isActive: integration.isActive ?? true,
+      databaseId: integration.databaseId ?? null,
+      settings: integration.settings ?? {}
+    };
     this.notionIntegrations.set(id, newIntegration);
     return newIntegration;
   }
@@ -569,7 +608,10 @@ export class MemStorage implements IStorage {
       ...integration, 
       id, 
       lastSynced: null,
-      createdAt: new Date()
+      isActive: integration.isActive ?? true,
+      webhookSecret: integration.webhookSecret ?? null,
+      aiEnabled: integration.aiEnabled ?? false,
+      settings: integration.settings ?? {}
     };
     this.xanoIntegrations.set(id, newIntegration);
     return newIntegration;
