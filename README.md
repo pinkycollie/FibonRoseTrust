@@ -2,7 +2,7 @@
 
 ## AI-Powered Universal Professional Verification & Trust System
 
-**Part of the MBTQ Universe Ecosystem** - Integrated with DeafAuth, PinkSync, and FibonRos
+**Part of the MBTQ.dev Ecosystem** - Integrated with DeafAuth, PinkSync, and FibonRose
 
 ## Overview
 
